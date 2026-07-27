@@ -1053,12 +1053,15 @@
     if(chatChannel){ sb.removeChannel(chatChannel); }
     chatChannel = sb.channel('chat-' + productId + '-' + otherId)
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, (payload)=>{
+        console.log('Realtime message received:', payload);
         const row = payload.new;
         if(activeChat && conversationFilterMatches(row, currentUser.id, activeChat.otherId, activeChat.productId)){
           appendChatMessage(row);
         }
       })
-      .subscribe();
+      .subscribe((status)=>{
+        console.log('Chat channel status:', status);
+      });
   }
 
   function renderChatMessages(msgs){
