@@ -128,6 +128,69 @@
   }
   .user-badge .logout-x:hover{ color:var(--pink); }
 
+  .chats-btn{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--gold-light);
+    padding:11px 18px;
+    border-radius:30px;
+    font-weight:600; font-size:13.5px;
+    cursor:pointer; white-space:nowrap;
+    position:relative;
+  }
+  .chats-btn:hover{ border-color:var(--gold); }
+  .msg-seller-btn{
+    background:var(--panel); color:var(--gold-light);
+    border:1px solid var(--gold); font-weight:600;
+  }
+
+  .chat-modal .modal{ display:flex; flex-direction:column; height:70vh; padding:0; }
+  .chat-header{
+    padding:18px 22px; border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .chat-header h3{ font-size:17px; color:var(--gold-light); }
+  .chat-header .sub-line{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .chat-body{ flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
+  .msg-bubble{
+    max-width:75%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.4;
+  }
+  .msg-mine{
+    align-self:flex-end; background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    border-bottom-right-radius:4px;
+  }
+  .msg-theirs{
+    align-self:flex-start; background:var(--panel); color:var(--cream); border:1px solid var(--line);
+    border-bottom-left-radius:4px;
+  }
+  .msg-time{ font-size:10px; opacity:0.65; margin-top:4px; }
+  .chat-input-row{
+    display:flex; gap:10px; padding:14px 20px; border-top:1px solid var(--line);
+  }
+  .chat-input-row input{
+    flex:1; padding:11px 14px; border-radius:24px; border:1px solid var(--line);
+    background:var(--panel); color:var(--cream); font-family:'Poppins'; font-size:13.5px;
+  }
+  .chat-input-row input:focus{ outline:2px solid var(--teal); }
+  .chat-send-btn{
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    border:none; padding:0 20px; border-radius:24px; font-weight:700; cursor:pointer;
+  }
+  .conv-item{
+    display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px;
+    border:1px solid var(--line); cursor:pointer; margin-bottom:10px;
+  }
+  .conv-item:hover{ border-color:var(--gold); }
+  .conv-item .avatar{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    display:flex; align-items:center; justify-content:center; font-weight:700;
+  }
+  .conv-item .conv-info{ flex:1; min-width:0; }
+  .conv-item .conv-name{ font-size:13.5px; font-weight:600; color:var(--cream); }
+  .conv-item .conv-preview{ font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .conv-item .conv-product{ font-size:10.5px; color:var(--teal); }
+
   /* ---------- Hero with 3D floating showcase ---------- */
   .hero{
     max-width:1240px; margin:0 auto;
@@ -367,6 +430,7 @@
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Products dhoondein — jese 'kurti', 'mobile', 'shoes'...">
     </div>
+    <button class="chats-btn" id="openInboxBtn" style="display:none;">💬 Mera Chat</button>
     <div id="authArea">
       <button class="login-btn" id="openAuthBtn">👤 Login / Signup</button>
     </div>
@@ -437,6 +501,34 @@
       <span id="authToggleText">Account nahi hai?</span>
       <a href="#" id="authToggleLink" style="color:var(--gold-light); text-decoration:underline;">Signup karein</a>
     </p>
+  </div>
+</div>
+
+<!-- Inbox Modal -->
+<div class="modal-overlay" id="inboxModalOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeInboxBtn">✕</button>
+    <h3>Mera Chat</h3>
+    <p class="sub">Aapki sab conversations</p>
+    <div id="conversationsList"></div>
+  </div>
+</div>
+
+<!-- Chat Modal -->
+<div class="modal-overlay chat-modal" id="chatModalOverlay">
+  <div class="modal">
+    <div class="chat-header">
+      <div>
+        <h3 id="chatWithName">Chat</h3>
+        <div class="sub-line" id="chatProductName"></div>
+      </div>
+      <button class="close-x" id="closeChatBtn" style="position:static;">✕</button>
+    </div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Message likhein...">
+      <button class="chat-send-btn" id="chatSendBtn">Bhejein</button>
+    </div>
   </div>
 </div>
 
@@ -648,6 +740,10 @@
         : `<span>${p.emoji || '📦'}</span>`;
       const isOwner = currentUser && p.seller_id === currentUser.id;
       const sellerLine = p.seller_name ? `<div class="seller-line">👤 ${p.seller_name}</div>` : '';
+      const canMessage = currentUser && p.custom && p.seller_id && !isOwner;
+      const msgBtn = canMessage
+        ? `<button class="contact-btn msg-seller-btn" data-msgid="${p.seller_id}" data-msgname="${p.seller_name || 'Seller'}" data-msgpid="${p.id}" data-msgpname="${p.name}">💬 Message</button>`
+        : '';
       return `
       <div class="card-holder">
         <div class="card" data-id="${p.id}">
@@ -664,11 +760,19 @@
             <div class="contact-row">
               <a class="contact-btn call-btn" href="tel:${(p.phone||DEFAULT_PHONE).replace(/-/g,'')}">📞 Call</a>
               <a class="contact-btn wa-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</a>
+              ${msgBtn}
             </div>
           </div>
         </div>
       </div>`;
     }).join('');
+
+    grid.querySelectorAll('.msg-seller-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        openChat(btn.dataset.msgid, btn.dataset.msgname, btn.dataset.msgpid, btn.dataset.msgpname);
+      });
+    });
 
     // 3D tilt effect
     grid.querySelectorAll('.card').forEach(card=>{
@@ -708,7 +812,9 @@
   let authMode = 'login'; // or 'signup'
 
   function renderAuthArea(){
+    const inboxBtn = document.getElementById('openInboxBtn');
     if(currentUser){
+      inboxBtn.style.display = 'inline-block';
       const initial = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
       authArea.innerHTML = `
         <div class="user-badge">
@@ -723,6 +829,7 @@
         renderProducts();
       });
     } else {
+      inboxBtn.style.display = 'none';
       authArea.innerHTML = `<button class="login-btn" id="openAuthBtn">👤 Login / Signup</button>`;
       document.getElementById('openAuthBtn').addEventListener('click', openAuth);
     }
@@ -909,6 +1016,166 @@
   });
 
   // init — wait for window 'load' so the Firebase module script (deferred) finishes first
+  // ---------- Chat System ----------
+  let activeChat = null; // { otherId, otherName, productId, productName }
+  let chatChannel = null;
+
+  const chatModalOverlay = document.getElementById('chatModalOverlay');
+  const inboxModalOverlay = document.getElementById('inboxModalOverlay');
+  const chatBody = document.getElementById('chatBody');
+
+  function conversationFilterMatches(row, a, b, productId){
+    return String(row.product_id) === String(productId) &&
+      ((row.sender_id === a && row.receiver_id === b) || (row.sender_id === b && row.receiver_id === a));
+  }
+
+  async function openChat(otherId, otherName, productId, productName){
+    if(!currentUser){ alert('Pehle Login karein.'); return; }
+    activeChat = { otherId, otherName, productId, productName };
+    document.getElementById('chatWithName').textContent = otherName;
+    document.getElementById('chatProductName').textContent = productName;
+    chatBody.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;">Load ho raha hai...</div>';
+    chatModalOverlay.classList.add('show');
+    inboxModalOverlay.classList.remove('show');
+
+    const { data, error } = await sb.from('messages')
+      .select('*')
+      .eq('product_id', productId)
+      .order('created_at', { ascending:true });
+
+    const msgs = (data || []).filter(row =>
+      conversationFilterMatches(row, currentUser.id, otherId, productId)
+    );
+    renderChatMessages(msgs);
+
+    if(chatChannel){ sb.removeChannel(chatChannel); }
+    chatChannel = sb.channel('chat-' + productId + '-' + otherId)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, (payload)=>{
+        const row = payload.new;
+        if(activeChat && conversationFilterMatches(row, currentUser.id, activeChat.otherId, activeChat.productId)){
+          appendChatMessage(row);
+        }
+      })
+      .subscribe();
+  }
+
+  function renderChatMessages(msgs){
+    if(msgs.length === 0){
+      chatBody.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;">Koi message nahi hai — sab se pehle aap likhein!</div>';
+      return;
+    }
+    chatBody.innerHTML = '';
+    msgs.forEach(appendChatMessage);
+  }
+
+  function appendChatMessage(row){
+    if(chatBody.children.length === 1 && chatBody.children[0].tagName === 'DIV' && chatBody.textContent.includes('pehle aap')){
+      chatBody.innerHTML = '';
+    }
+    const mine = row.sender_id === currentUser.id;
+    const time = row.created_at ? new Date(row.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble ' + (mine ? 'msg-mine' : 'msg-theirs');
+    bubble.innerHTML = `${escapeHtml(row.message)}<div class="msg-time">${time}</div>`;
+    chatBody.appendChild(bubble);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  document.getElementById('closeChatBtn').addEventListener('click', ()=>{
+    chatModalOverlay.classList.remove('show');
+    if(chatChannel){ sb.removeChannel(chatChannel); chatChannel = null; }
+    activeChat = null;
+  });
+
+  async function sendChatMessage(){
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if(!text || !activeChat || !currentUser) return;
+    input.value = '';
+    const { error } = await sb.from('messages').insert([{
+      product_id: activeChat.productId,
+      sender_id: currentUser.id,
+      sender_name: currentUser.name,
+      receiver_id: activeChat.otherId,
+      receiver_name: activeChat.otherName,
+      message: text
+    }]);
+    if(error){
+      alert('Message bhejne mein masla hua.');
+      console.error(error);
+    }
+  }
+  document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
+  document.getElementById('chatInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') sendChatMessage();
+  });
+
+  // ---------- Inbox (list of conversations) ----------
+  document.getElementById('openInboxBtn').addEventListener('click', loadConversations);
+  document.getElementById('closeInboxBtn').addEventListener('click', ()=>{
+    inboxModalOverlay.classList.remove('show');
+  });
+
+  async function loadConversations(){
+    if(!currentUser) return;
+    inboxModalOverlay.classList.add('show');
+    const list = document.getElementById('conversationsList');
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0;">Load ho raha hai...</div>';
+
+    const { data, error } = await sb.from('messages')
+      .select('*')
+      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+      .order('created_at', { ascending:false });
+
+    if(error || !data || data.length === 0){
+      list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0;">Abhi koi conversation nahi hai.</div>';
+      return;
+    }
+
+    // group by product_id + other person
+    const convMap = new Map();
+    data.forEach(row=>{
+      const otherId = row.sender_id === currentUser.id ? row.receiver_id : row.sender_id;
+      const otherName = row.sender_id === currentUser.id ? row.receiver_name : row.sender_name;
+      const key = row.product_id + '::' + otherId;
+      if(!convMap.has(key)){
+        convMap.set(key, {
+          otherId, otherName: otherName || 'User',
+          productId: row.product_id,
+          lastMessage: row.message,
+          lastTime: row.created_at
+        });
+      }
+    });
+
+    const product = (id)=> products.find(p=>String(p.id)===String(id));
+
+    list.innerHTML = '';
+    convMap.forEach(conv=>{
+      const prod = product(conv.productId);
+      const div = document.createElement('div');
+      div.className = 'conv-item';
+      const initial = (conv.otherName || '?').charAt(0).toUpperCase();
+      div.innerHTML = `
+        <div class="avatar">${initial}</div>
+        <div class="conv-info">
+          <div class="conv-name">${conv.otherName}</div>
+          <div class="conv-preview">${escapeHtml(conv.lastMessage)}</div>
+          <div class="conv-product">${prod ? prod.name : 'Product'}</div>
+        </div>`;
+      div.addEventListener('click', ()=>{
+        openChat(conv.otherId, conv.otherName, conv.productId, prod ? prod.name : 'Product');
+      });
+      list.appendChild(div);
+    });
+  }
+
   window.addEventListener('load', initStorage);
 </script>
 
