@@ -416,6 +416,11 @@
       <input type="text" id="pPhone" placeholder="03XX-XXXXXXX" value="0336-8345678">
     </div>
 
+    <div class="field">
+      <label for="pPassword">Admin Password</label>
+      <input type="password" id="pPassword" placeholder="Password likhein">
+    </div>
+
     <div class="modal-actions">
       <button class="btn-ghost" id="cancelSellBtn">Cancel</button>
       <button class="btn-primary" id="submitSellBtn">Product Add Karein</button>
@@ -425,6 +430,7 @@
 
 <script>
   const DEFAULT_PHONE = "0336-8345678";
+  const ADMIN_PASSWORD = "Allah786$";
 
   const seedProducts = [
     {id:1, name:"Lawn Print Ladies Kurti", cat:"Fashion", price:2450, desc:"High quality lawn fabric, saari sizes available.", emoji:"👗", phone:DEFAULT_PHONE, image:null, custom:false},
@@ -578,7 +584,7 @@
         <div class="card" data-id="${p.id}">
           <div class="card-img">
             <span class="card-tag">${p.cat}</span>
-            ${p.custom ? `<button class="remove-tag" data-id="${String(p.id)}">Remove</button>` : ''}
+            ${p.custom ? `<button class="remove-tag" data-id="${String(p.id)}" data-phone="${(p.phone||'').replace(/[^0-9]/g,'')}">Remove</button>` : ''}
             ${imgHtml}
           </div>
           <div class="card-body">
@@ -613,10 +619,14 @@
       btn.addEventListener('click', async (e)=>{
         e.stopPropagation();
         const id = btn.dataset.id;
-        if(confirm('Ye product remove karna hai?')){
-          await removeProductFromDb(sharedWorking ? id : parseInt(id));
-          if(!sharedWorking) renderProducts();
+        const entered = prompt('Product delete karne ke liye password likhein:');
+        if(entered === null) return; // user cancelled
+        if(entered !== ADMIN_PASSWORD){
+          alert('Galat password — product delete nahi ho saka.');
+          return;
         }
+        await removeProductFromDb(sharedWorking ? id : parseInt(id));
+        if(!sharedWorking) renderProducts();
       });
     });
   }
@@ -657,9 +667,15 @@
     const price = document.getElementById('pPrice').value.trim();
     const desc = document.getElementById('pDesc').value.trim();
     const phone = document.getElementById('pPhone').value.trim() || DEFAULT_PHONE;
+    const enteredPassword = document.getElementById('pPassword').value;
 
     if(!name || !price){
       alert('Barah-e-karam kam az kam naam aur price to darj karein.');
+      return;
+    }
+
+    if(enteredPassword !== ADMIN_PASSWORD){
+      alert('Galat password — product add nahi ho saka.');
       return;
     }
 
@@ -690,6 +706,7 @@
     document.getElementById('pPrice').value = '';
     document.getElementById('pDesc').value = '';
     document.getElementById('pPhone').value = DEFAULT_PHONE;
+    document.getElementById('pPassword').value = '';
     document.getElementById('pImage').value = '';
     imgPreview.innerHTML = 'Koi tasveer nahi chuni gayi';
     selectedImageData = null;
