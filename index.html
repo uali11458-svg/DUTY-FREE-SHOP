@@ -1107,7 +1107,7 @@
       message: text
     }]);
     if(error){
-      alert('Message bhejne mein masla hua.');
+      alert('Message bhejne mein masla hua.\nWajah: ' + (error.message || JSON.stringify(error)));
       console.error(error);
     }
   }
