@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DFS — Duty Free Shop</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230B0F19'/%3E%3Ccircle cx='32' cy='32' r='29' fill='none' stroke='%23D4AF37' stroke-width='2'/%3E%3Ctext x='32' y='40' font-family='Georgia, serif' font-size='24' font-weight='700' fill='%23D4AF37' text-anchor='middle'%3EDFS%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -94,6 +95,38 @@
     transition:transform 0.15s ease, box-shadow 0.15s ease;
   }
   .sell-btn:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(212,175,55,0.35); }
+
+  .login-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--cream);
+    padding:11px 18px;
+    border-radius:30px;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .login-btn:hover{ border-color:var(--gold); color:var(--gold-light); }
+  .user-badge{
+    display:flex; align-items:center; gap:10px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:7px 8px 7px 16px;
+    border-radius:30px;
+    font-size:13.5px;
+  }
+  .user-badge .avatar{
+    width:26px; height:26px; border-radius:50%;
+    background:linear-gradient(135deg, var(--gold), var(--gold-light));
+    color:var(--navy); display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:12px;
+  }
+  .user-badge .logout-x{
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    font-size:13px; padding:4px 8px;
+  }
+  .user-badge .logout-x:hover{ color:var(--pink); }
 
   /* ---------- Hero with 3D floating showcase ---------- */
   .hero{
@@ -236,6 +269,7 @@
   }
   .card-body{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:5px; flex:1; }
   .card-body h4{ font-size:15px; font-weight:600; color:var(--cream); line-height:1.3; }
+  .seller-line{ font-size:11.5px; color:var(--teal); font-weight:600; }
   .card-desc{ font-size:12.5px; color:var(--muted); line-height:1.4; min-height:32px; }
   .card-price{ font-family:'Playfair Display'; font-weight:700; color:var(--gold-light); font-size:20px; margin-top:2px; }
   .card-price small{ font-family:'Poppins'; font-size:11px; color:var(--muted); font-weight:400; }
@@ -333,6 +367,9 @@
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Products dhoondein — jese 'kurti', 'mobile', 'shoes'...">
     </div>
+    <div id="authArea">
+      <button class="login-btn" id="openAuthBtn">👤 Login / Signup</button>
+    </div>
     <button class="sell-btn" id="openSellBtn">+ Apna Product Bechein</button>
   </div>
 </header>
@@ -369,6 +406,39 @@
 <footer>
   <b>DFS — Duty Free Shop</b> · Contact: 0336-8345678 (Call / WhatsApp) · Aapke apne products aap khud list karein.
 </footer>
+
+<!-- Auth Modal -->
+<div class="modal-overlay" id="authModalOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeAuthBtn">✕</button>
+    <h3 id="authTitle">Login Karein</h3>
+    <p class="sub" id="authSub">Apna account access karein</p>
+
+    <div class="field" id="authNameField" style="display:none;">
+      <label for="authName">Aapka Naam</label>
+      <input type="text" id="authName" placeholder="Jese: Ali Khan">
+    </div>
+
+    <div class="field">
+      <label for="authEmail">Email</label>
+      <input type="email" id="authEmail" placeholder="aap@example.com">
+    </div>
+
+    <div class="field">
+      <label for="authPassword">Password</label>
+      <input type="password" id="authPassword" placeholder="Kam az kam 6 harf">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="authSubmitBtn" style="flex:1">Login Karein</button>
+    </div>
+
+    <p style="text-align:center; margin-top:16px; font-size:13px; color:var(--muted);">
+      <span id="authToggleText">Account nahi hai?</span>
+      <a href="#" id="authToggleLink" style="color:var(--gold-light); text-decoration:underline;">Signup karein</a>
+    </p>
+  </div>
+</div>
 
 <!-- Sell Modal -->
 <div class="modal-overlay" id="sellModalOverlay">
@@ -416,11 +486,6 @@
       <input type="text" id="pPhone" placeholder="03XX-XXXXXXX" value="0336-8345678">
     </div>
 
-    <div class="field">
-      <label for="pPassword">Admin Password</label>
-      <input type="password" id="pPassword" placeholder="Password likhein">
-    </div>
-
     <div class="modal-actions">
       <button class="btn-ghost" id="cancelSellBtn">Cancel</button>
       <button class="btn-primary" id="submitSellBtn">Product Add Karein</button>
@@ -455,6 +520,7 @@
   async function initStorage(){
     try{
       sb = window.__dfsSupabase;
+      await restoreSession();
       const { data, error } = await sb.from('products').select('*').order('id', { ascending:false });
       if(error) throw error;
 
@@ -511,7 +577,8 @@
     if(sharedWorking && sb){
       await sb.from('products').insert([{
         name:p.name, cat:p.cat, price:p.price, desc:p.desc,
-        phone:p.phone, image:p.image, custom:p.custom !== undefined ? p.custom : true
+        phone:p.phone, image:p.image, custom:p.custom !== undefined ? p.custom : true,
+        seller_id: p.seller_id || null, seller_name: p.seller_name || null
       }]);
     } else {
       if(isNew){
@@ -579,16 +646,19 @@
       const imgHtml = p.image
         ? `<img src="${p.image}" alt="${p.name}">`
         : `<span>${p.emoji || '📦'}</span>`;
+      const isOwner = currentUser && p.seller_id === currentUser.id;
+      const sellerLine = p.seller_name ? `<div class="seller-line">👤 ${p.seller_name}</div>` : '';
       return `
       <div class="card-holder">
         <div class="card" data-id="${p.id}">
           <div class="card-img">
             <span class="card-tag">${p.cat}</span>
-            ${p.custom ? `<button class="remove-tag" data-id="${String(p.id)}" data-phone="${(p.phone||'').replace(/[^0-9]/g,'')}">Remove</button>` : ''}
+            ${p.custom && isOwner ? `<button class="remove-tag" data-id="${String(p.id)}">Remove</button>` : ''}
             ${imgHtml}
           </div>
           <div class="card-body">
             <h4>${p.name}</h4>
+            ${sellerLine}
             <div class="card-desc">${p.desc || ''}</div>
             <div class="card-price">Rs ${Number(p.price).toLocaleString()} <small>PKR</small></div>
             <div class="contact-row">
@@ -619,12 +689,7 @@
       btn.addEventListener('click', async (e)=>{
         e.stopPropagation();
         const id = btn.dataset.id;
-        const entered = prompt('Product delete karne ke liye password likhein:');
-        if(entered === null) return; // user cancelled
-        if(entered !== ADMIN_PASSWORD){
-          alert('Galat password — product delete nahi ho saka.');
-          return;
-        }
+        if(!confirm('Ye product remove karna hai?')) return;
         await removeProductFromDb(sharedWorking ? id : parseInt(id));
         if(!sharedWorking) renderProducts();
       });
@@ -636,12 +701,137 @@
     renderProducts();
   });
 
+  // ---------- Auth (Supabase) ----------
+  let currentUser = null; // {id, email, name}
+  const authArea = document.getElementById('authArea');
+  const authModalOverlay = document.getElementById('authModalOverlay');
+  let authMode = 'login'; // or 'signup'
+
+  function renderAuthArea(){
+    if(currentUser){
+      const initial = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
+      authArea.innerHTML = `
+        <div class="user-badge">
+          <div class="avatar">${initial}</div>
+          <span>${currentUser.name || currentUser.email}</span>
+          <button class="logout-x" id="logoutBtn">Logout</button>
+        </div>`;
+      document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+        await sb.auth.signOut();
+        currentUser = null;
+        renderAuthArea();
+        renderProducts();
+      });
+    } else {
+      authArea.innerHTML = `<button class="login-btn" id="openAuthBtn">👤 Login / Signup</button>`;
+      document.getElementById('openAuthBtn').addEventListener('click', openAuth);
+    }
+  }
+
+  function openAuth(){ authModalOverlay.classList.add('show'); }
+  function closeAuth(){ authModalOverlay.classList.remove('show'); }
+  document.getElementById('closeAuthBtn').addEventListener('click', closeAuth);
+
+  function setAuthMode(mode){
+    authMode = mode;
+    const nameField = document.getElementById('authNameField');
+    const title = document.getElementById('authTitle');
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const toggleText = document.getElementById('authToggleText');
+    const toggleLink = document.getElementById('authToggleLink');
+    if(mode === 'signup'){
+      nameField.style.display = 'block';
+      title.textContent = 'Naya Account Banayein';
+      submitBtn.textContent = 'Signup Karein';
+      toggleText.textContent = 'Pehle se account hai?';
+      toggleLink.textContent = 'Login karein';
+    } else {
+      nameField.style.display = 'none';
+      title.textContent = 'Login Karein';
+      submitBtn.textContent = 'Login Karein';
+      toggleText.textContent = 'Account nahi hai?';
+      toggleLink.textContent = 'Signup karein';
+    }
+  }
+  document.getElementById('authToggleLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    setAuthMode(authMode === 'login' ? 'signup' : 'login');
+  });
+
+  document.getElementById('authSubmitBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const name = document.getElementById('authName').value.trim();
+    const btn = document.getElementById('authSubmitBtn');
+
+    if(!email || !password || (authMode === 'signup' && !name)){
+      alert('Barah-e-karam sab fields bharein.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Intezar karein...';
+
+    try{
+      if(authMode === 'signup'){
+        const { data, error } = await sb.auth.signUp({
+          email, password,
+          options: { data: { full_name: name } }
+        });
+        if(error) throw error;
+        if(data.user && !data.session){
+          alert('Account ban gaya! Agar email confirmation mangi jaye to email check karein, warna seedha login kar lein.');
+          setAuthMode('login');
+        } else if(data.session){
+          currentUser = { id: data.user.id, email: data.user.email, name };
+          renderAuthArea();
+          renderProducts();
+          closeAuth();
+        }
+      } else {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+        currentUser = {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.user_metadata?.full_name || data.user.email
+        };
+        renderAuthArea();
+        renderProducts();
+        closeAuth();
+      }
+    } catch(e){
+      alert('Error: ' + (e.message || 'Kuch ghalat ho gaya.'));
+    }
+
+    btn.disabled = false;
+    btn.textContent = authMode === 'signup' ? 'Signup Karein' : 'Login Karein';
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+    document.getElementById('authName').value = '';
+  });
+
+  async function restoreSession(){
+    if(!sb) return;
+    const { data } = await sb.auth.getSession();
+    if(data.session){
+      const u = data.session.user;
+      currentUser = { id: u.id, email: u.email, name: u.user_metadata?.full_name || u.email };
+    }
+    renderAuthArea();
+  }
+
   // ---------- Sell Modal ----------
   const sellModalOverlay = document.getElementById('sellModalOverlay');
   const imgPreview = document.getElementById('imgPreview');
   let selectedImageData = null;
 
   document.getElementById('openSellBtn').addEventListener('click', ()=>{
+    if(!currentUser){
+      alert('Product bechne ke liye pehle Login ya Signup karein.');
+      openAuth();
+      return;
+    }
     sellModalOverlay.classList.add('show');
   });
   document.getElementById('closeSellBtn').addEventListener('click', closeSell);
@@ -662,20 +852,18 @@
   });
 
   document.getElementById('submitSellBtn').addEventListener('click', async ()=>{
+    if(!currentUser){
+      alert('Pehle Login karein.');
+      return;
+    }
     const name = document.getElementById('pName').value.trim();
     const cat = document.getElementById('pCat').value;
     const price = document.getElementById('pPrice').value.trim();
     const desc = document.getElementById('pDesc').value.trim();
     const phone = document.getElementById('pPhone').value.trim() || DEFAULT_PHONE;
-    const enteredPassword = document.getElementById('pPassword').value;
 
     if(!name || !price){
       alert('Barah-e-karam kam az kam naam aur price to darj karein.');
-      return;
-    }
-
-    if(enteredPassword !== ADMIN_PASSWORD){
-      alert('Galat password — product add nahi ho saka.');
       return;
     }
 
@@ -688,7 +876,9 @@
       emoji: "🛍️",
       phone,
       image: selectedImageData,
-      custom: true
+      custom: true,
+      seller_id: currentUser.id,
+      seller_name: currentUser.name
     };
 
     try{
@@ -706,7 +896,6 @@
     document.getElementById('pPrice').value = '';
     document.getElementById('pDesc').value = '';
     document.getElementById('pPhone').value = DEFAULT_PHONE;
-    document.getElementById('pPassword').value = '';
     document.getElementById('pImage').value = '';
     imgPreview.innerHTML = 'Koi tasveer nahi chuni gayi';
     selectedImageData = null;
