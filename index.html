@@ -1019,6 +1019,7 @@
   // ---------- Chat System ----------
   let activeChat = null; // { otherId, otherName, productId, productName }
   let chatChannel = null;
+  let seenMessageIds = new Set();
 
   const chatModalOverlay = document.getElementById('chatModalOverlay');
   const inboxModalOverlay = document.getElementById('inboxModalOverlay');
@@ -1032,6 +1033,7 @@
   async function openChat(otherId, otherName, productId, productName){
     if(!currentUser){ alert('Pehle Login karein.'); return; }
     activeChat = { otherId, otherName, productId, productName };
+    seenMessageIds = new Set();
     document.getElementById('chatWithName').textContent = otherName;
     document.getElementById('chatProductName').textContent = productName;
     chatBody.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;">Load ho raha hai...</div>';
@@ -1069,6 +1071,10 @@
   }
 
   function appendChatMessage(row){
+    if(row.id !== undefined){
+      if(seenMessageIds.has(row.id)) return;
+      seenMessageIds.add(row.id);
+    }
     if(chatBody.children.length === 1 && chatBody.children[0].tagName === 'DIV' && chatBody.textContent.includes('pehle aap')){
       chatBody.innerHTML = '';
     }
@@ -1098,18 +1104,26 @@
     const text = input.value.trim();
     if(!text || !activeChat || !currentUser) return;
     input.value = '';
-    const { error } = await sb.from('messages').insert([{
+    const { data, error } = await sb.from('messages').insert([{
       product_id: activeChat.productId,
       sender_id: currentUser.id,
       sender_name: currentUser.name,
       receiver_id: activeChat.otherId,
       receiver_name: activeChat.otherName,
       message: text
-    }]);
+    }]).select();
+
     if(error){
       alert('Message bhejne mein masla hua.\nWajah: ' + (error.message || JSON.stringify(error)));
       console.error(error);
+      return;
     }
+
+    // Turant apna message dikhayein, realtime ka intezar na karein
+    const insertedRow = (data && data[0]) ? data[0] : {
+      sender_id: currentUser.id, receiver_id: activeChat.otherId, message: text, created_at: new Date().toISOString()
+    };
+    appendChatMessage(insertedRow);
   }
   document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
   document.getElementById('chatInput').addEventListener('keydown', (e)=>{
