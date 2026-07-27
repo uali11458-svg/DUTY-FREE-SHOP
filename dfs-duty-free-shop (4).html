@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ur-Latn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFS — Duty Free Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ===== SUPABASE SETUP =====
+  const SUPABASE_URL = "https://apfazzoguhjstuysurco.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_T1tzYCeVSyY_E3iDGSkeBg_Ql6JlSPz";
+  window.__dfsSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<style>
+  :root{
+    --navy:#0B0F19;
+    --navy2:#131A2B;
+    --panel:#171F33;
+    --gold:#D4AF37;
+    --gold-light:#F2CB6E;
+    --teal:#29C5B8;
+    --cream:#F5F3EE;
+    --muted:#9AA1B0;
+    --line: rgba(212,175,55,0.18);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Poppins', sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(212,175,55,0.10), transparent 60%),
+      radial-gradient(900px 500px at 90% 0%, rgba(41,197,184,0.10), transparent 55%),
+      var(--navy);
+    color:var(--cream);
+    min-height:100vh;
+  }
+  h1,h2,h3, .display{ font-family:'Playfair Display', serif; }
+  ::selection{ background:var(--gold); color:var(--navy); }
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky; top:0; z-index:60;
+    background:rgba(11,15,25,0.85);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-wrap{
+    max-width:1240px; margin:0 auto;
+    padding:16px 24px;
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+  }
+  .logo{
+    font-family:'Playfair Display', serif;
+    font-weight:800; font-size:26px;
+    color:var(--gold);
+    letter-spacing:1px;
+    display:flex; flex-direction:column; line-height:1;
+  }
+  .logo small{
+    font-family:'Poppins'; font-size:9.5px; font-weight:600;
+    color:var(--muted); letter-spacing:3px; margin-top:3px;
+  }
+  .search-box{
+    flex:1; min-width:200px;
+    position:relative;
+  }
+  .search-box input{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:30px;
+    padding:12px 20px 12px 42px;
+    color:var(--cream);
+    font-family:'Poppins'; font-size:14px;
+  }
+  .search-box input:focus{ outline:2px solid var(--teal); }
+  .search-box input::placeholder{ color:var(--muted); }
+  .search-icon{
+    position:absolute; left:16px; top:50%; transform:translateY(-50%);
+    opacity:0.6; pointer-events:none;
+  }
+  .sell-btn{
+    background:linear-gradient(135deg, var(--gold), var(--gold-light));
+    color:var(--navy);
+    border:none;
+    padding:12px 22px;
+    border-radius:30px;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .sell-btn:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(212,175,55,0.35); }
+
+  /* ---------- Hero with 3D floating showcase ---------- */
+  .hero{
+    max-width:1240px; margin:0 auto;
+    padding:70px 24px 40px;
+    display:grid; grid-template-columns:1.1fr 0.9fr;
+    gap:40px; align-items:center;
+  }
+  .hero h1{
+    font-size:clamp(36px, 5.2vw, 60px);
+    line-height:1.08;
+  }
+  .hero h1 .gold-text{
+    background:linear-gradient(135deg, var(--gold-light), var(--gold));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero p{ margin-top:18px; color:var(--muted); font-size:16.5px; max-width:460px; }
+  .hero-tags{ margin-top:24px; display:flex; gap:10px; flex-wrap:wrap; }
+  .hero-tag{
+    border:1px solid var(--line); border-radius:20px; padding:7px 16px;
+    font-size:12.5px; color:var(--gold-light);
+  }
+
+  /* 3D showcase scene */
+  .scene{
+    perspective:1200px;
+    height:320px;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .showcase{
+    width:220px; height:220px;
+    position:relative;
+    transform-style:preserve-3d;
+    animation:float 6s ease-in-out infinite;
+  }
+  @keyframes float{
+    0%,100%{ transform:rotateX(12deg) rotateY(-18deg) translateY(0px); }
+    50%{ transform:rotateX(8deg) rotateY(18deg) translateY(-14px); }
+  }
+  .showcase .face{
+    position:absolute; inset:0;
+    border:1.5px solid var(--gold);
+    border-radius:16px;
+    background:linear-gradient(135deg, rgba(212,175,55,0.14), rgba(41,197,184,0.08));
+    backdrop-filter:blur(6px);
+    box-shadow:0 0 40px rgba(212,175,55,0.15);
+  }
+  .showcase .face.back{ transform:translateZ(-40px); opacity:0.5; }
+  .showcase .icon{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:74px;
+    transform:translateZ(20px);
+  }
+  .orbit-item{
+    position:absolute; font-size:26px;
+    animation:orbit 10s linear infinite;
+    filter:drop-shadow(0 0 8px rgba(212,175,55,0.5));
+  }
+  .orbit-item:nth-child(2){ animation-delay:-3.3s; }
+  .orbit-item:nth-child(3){ animation-delay:-6.6s; }
+  @keyframes orbit{
+    from{ transform:rotate(0deg) translateX(140px) rotate(0deg); }
+    to{ transform:rotate(360deg) translateX(140px) rotate(-360deg); }
+  }
+
+  /* ---------- Category chips ---------- */
+  .cat-wrap{
+    max-width:1240px; margin:0 auto;
+    padding:6px 24px 28px;
+    display:flex; gap:10px; flex-wrap:wrap;
+  }
+  .chip{
+    padding:9px 18px; border-radius:24px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--muted);
+    font-weight:600; font-size:13.5px;
+    cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .chip.active, .chip:hover{
+    background:linear-gradient(135deg, var(--gold), var(--gold-light));
+    color:var(--navy); border-color:transparent;
+  }
+
+  /* ---------- Product grid with 3D tilt ---------- */
+  .shop{ max-width:1240px; margin:0 auto; padding:10px 24px 90px; }
+  .shop h2{ font-size:26px; color:var(--gold-light); margin-bottom:20px; }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
+    gap:22px;
+  }
+  .card-holder{ perspective:900px; }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    transform-style:preserve-3d;
+    transition:transform 0.15s ease, box-shadow 0.2s ease;
+    position:relative;
+  }
+  .card:hover{ box-shadow:0 20px 40px rgba(0,0,0,0.45), 0 0 0 1px var(--gold); }
+  .card-img{
+    height:170px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:60px;
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(135deg, rgba(212,175,55,0.12), rgba(41,197,184,0.08));
+  }
+  .card-img img{ width:100%; height:100%; object-fit:cover; }
+  .card-img::after{
+    content:"";
+    position:absolute; top:0; left:-60%;
+    width:40%; height:100%;
+    background:linear-gradient(120deg, transparent, rgba(255,255,255,0.18), transparent);
+    transform:skewX(-20deg);
+    transition:left 0.6s ease;
+  }
+  .card:hover .card-img::after{ left:130%; }
+  .card-tag{
+    position:absolute; top:10px; left:10px;
+    background:rgba(11,15,25,0.7);
+    color:var(--gold-light);
+    font-size:10.5px; font-weight:700;
+    padding:4px 10px; border-radius:20px;
+    text-transform:uppercase; letter-spacing:0.5px;
+    border:1px solid var(--line);
+  }
+  .remove-tag{
+    position:absolute; top:10px; right:10px;
+    background:rgba(230,57,113,0.85);
+    border:none; color:white; font-size:11px;
+    padding:4px 9px; border-radius:20px; cursor:pointer;
+  }
+  .card-body{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:5px; flex:1; }
+  .card-body h4{ font-size:15px; font-weight:600; color:var(--cream); line-height:1.3; }
+  .card-desc{ font-size:12.5px; color:var(--muted); line-height:1.4; min-height:32px; }
+  .card-price{ font-family:'Playfair Display'; font-weight:700; color:var(--gold-light); font-size:20px; margin-top:2px; }
+  .card-price small{ font-family:'Poppins'; font-size:11px; color:var(--muted); font-weight:400; }
+  .contact-row{ margin-top:auto; display:flex; gap:8px; padding-top:8px; }
+  .contact-btn{
+    flex:1; text-align:center;
+    padding:10px 6px; border-radius:8px;
+    font-weight:600; font-size:12.5px;
+    text-decoration:none;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:transform 0.15s ease;
+  }
+  .contact-btn:hover{ transform:translateY(-2px); }
+  .call-btn{ background:var(--teal); color:var(--navy); }
+  .wa-btn{ background:#25D366; color:#0B0F19; }
+
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--muted);
+    border:1px dashed var(--line); border-radius:16px;
+  }
+
+  /* ---------- Sell Modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(5,7,12,0.75);
+    backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center;
+    z-index:100; padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{
+    background:var(--navy2);
+    border:1px solid var(--line);
+    border-radius:18px;
+    width:min(480px, 100%);
+    padding:28px;
+    max-height:90vh; overflow-y:auto;
+  }
+  .modal h3{ color:var(--gold-light); font-size:24px; margin-bottom:4px; }
+  .modal p.sub{ color:var(--muted); font-size:13px; margin-bottom:20px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--cream); }
+  .field input, .field textarea, .field select{
+    width:100%; padding:11px 13px; border-radius:9px;
+    border:1px solid var(--line); font-family:'Poppins'; font-size:14px;
+    background:var(--panel); color:var(--cream);
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{ outline:2px solid var(--teal); }
+  .img-preview{
+    margin-top:10px; width:100%; height:130px; border-radius:10px;
+    background:var(--panel); border:1px dashed var(--line);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; color:var(--muted); font-size:13px;
+  }
+  .img-preview img{ width:100%; height:100%; object-fit:cover; }
+  .modal-actions{ display:flex; gap:10px; margin-top:20px; }
+  .btn-primary{
+    background:linear-gradient(135deg, var(--gold), var(--gold-light));
+    color:var(--navy); border:none; padding:13px; border-radius:9px;
+    font-weight:700; font-size:14.5px; cursor:pointer; flex:1;
+  }
+  .btn-ghost{
+    background:transparent; border:1px solid var(--line); color:var(--cream);
+    padding:13px; border-radius:9px; font-weight:600; font-size:14.5px; cursor:pointer; flex:1;
+  }
+  .close-x{
+    position:absolute; top:16px; right:20px; background:none; border:none;
+    color:var(--muted); font-size:20px; cursor:pointer;
+  }
+  .modal{ position:relative; }
+
+  footer{
+    text-align:center; padding:28px; color:var(--muted); font-size:12.5px;
+    border-top:1px solid var(--line);
+  }
+  footer b{ color:var(--gold-light); }
+
+  @media (max-width:780px){
+    .hero{ grid-template-columns:1fr; padding-top:36px; }
+    .scene{ height:220px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+  button:focus-visible, .chip:focus-visible, input:focus-visible{
+    outline:3px solid var(--teal); outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-wrap">
+    <div class="logo">DFS<small>DUTY FREE SHOP</small></div>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Products dhoondein — jese 'kurti', 'mobile', 'shoes'...">
+    </div>
+    <button class="sell-btn" id="openSellBtn">+ Apna Product Bechein</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div>
+    <h1>Bechein Bhi,<br><span class="gold-text">Khareedein Bhi</span> — Yahan Sab Kuch</h1>
+    <p>DFS Duty Free Shop ek khula bazaar hai — koi bhi apna product list kare, koi bhi khareede. Seedha call ya WhatsApp par baat karein, koi jhanjhat nahi.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">📞 Direct Contact</span>
+      <span class="hero-tag">🔎 Instant Search</span>
+      <span class="hero-tag">🛍️ Sab Categories</span>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="showcase">
+      <div class="face back"></div>
+      <div class="face"></div>
+      <div class="icon">🛍️</div>
+    </div>
+    <div class="orbit-item">💄</div>
+    <div class="orbit-item">📱</div>
+    <div class="orbit-item">👗</div>
+  </div>
+</section>
+
+<div class="cat-wrap" id="catWrap"></div>
+
+<section class="shop">
+  <h2 id="shopTitle">Sab Products</h2>
+  <div class="grid" id="productGrid"></div>
+</section>
+
+<footer>
+  <b>DFS — Duty Free Shop</b> · Contact: 0336-8345678 (Call / WhatsApp) · Aapke apne products aap khud list karein.
+</footer>
+
+<!-- Sell Modal -->
+<div class="modal-overlay" id="sellModalOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeSellBtn">✕</button>
+    <h3>Apna Product List Karein</h3>
+    <p class="sub">Details bharein, product turant website par nazar aayega</p>
+
+    <div class="field">
+      <label for="pName">Product Ka Naam</label>
+      <input type="text" id="pName" placeholder="Jese: Lawn Print Kurti">
+    </div>
+
+    <div class="field">
+      <label for="pCat">Category</label>
+      <select id="pCat">
+        <option>Fashion</option>
+        <option>Electronics</option>
+        <option>Home</option>
+        <option>Beauty</option>
+        <option>Grocery</option>
+        <option>Handmade</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="pPrice">Price (Rs)</label>
+      <input type="number" id="pPrice" placeholder="Jese: 1500">
+    </div>
+
+    <div class="field">
+      <label for="pDesc">Description</label>
+      <textarea id="pDesc" rows="3" placeholder="Product ke baare mein thori tafseel likhein"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="pImage">Product Ki Tasveer</label>
+      <input type="file" id="pImage" accept="image/*">
+      <div class="img-preview" id="imgPreview">Koi tasveer nahi chuni gayi</div>
+    </div>
+
+    <div class="field">
+      <label for="pPhone">Contact Number (Call/WhatsApp)</label>
+      <input type="text" id="pPhone" placeholder="03XX-XXXXXXX" value="0336-8345678">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelSellBtn">Cancel</button>
+      <button class="btn-primary" id="submitSellBtn">Product Add Karein</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DEFAULT_PHONE = "0336-8345678";
+
+  const seedProducts = [
+    {id:1, name:"Lawn Print Ladies Kurti", cat:"Fashion", price:2450, desc:"High quality lawn fabric, saari sizes available.", emoji:"👗", phone:DEFAULT_PHONE, image:null, custom:false},
+    {id:2, name:"Wireless Earbuds", cat:"Electronics", price:3499, desc:"Bluetooth 5.0, 20hr battery backup, original box.", emoji:"🎧", phone:DEFAULT_PHONE, image:null, custom:false},
+    {id:3, name:"Non-Stick Cooking Pan", cat:"Home", price:1750, desc:"Ghar ke liye durable non-stick pan, medium size.", emoji:"🍳", phone:DEFAULT_PHONE, image:null, custom:false},
+    {id:4, name:"Herbal Face Serum", cat:"Beauty", price:1350, desc:"Natural ingredients, sab skin types ke liye theek.", emoji:"🧴", phone:DEFAULT_PHONE, image:null, custom:false},
+    {id:5, name:"Basmati Rice 5kg", cat:"Grocery", price:1650, desc:"Premium quality lamba dana chawal.", emoji:"🌾", phone:DEFAULT_PHONE, image:null, custom:false},
+    {id:6, name:"Handmade Clay Pot", cat:"Handmade", price:850, desc:"Ghar ke decoration ke liye khoobsurat clay pot.", emoji:"🏺", phone:DEFAULT_PHONE, image:null, custom:false},
+    {id:7, name:"Men's Casual Kurta", cat:"Fashion", price:1899, desc:"Comfortable cotton kurta, roz mara pehnne ke liye.", emoji:"👕", phone:DEFAULT_PHONE, image:null, custom:false},
+    {id:8, name:"Power Bank 20000mAh", cat:"Electronics", price:2999, desc:"Fast charging, do devices ek sath charge karein.", emoji:"🔋", phone:DEFAULT_PHONE, image:null, custom:false},
+  ];
+
+  const categories = ["All", "Fashion", "Electronics", "Home", "Beauty", "Grocery", "Handmade", "Other"];
+  let activeCat = "All";
+  let searchTerm = "";
+  let products = [];
+
+  // ---------- Shared Storage (Supabase) ----------
+  let sharedWorking = false;
+  let sb = null;
+
+  async function initStorage(){
+    try{
+      sb = window.__dfsSupabase;
+      const { data, error } = await sb.from('products').select('*').order('id', { ascending:false });
+      if(error) throw error;
+
+      products = data || [];
+
+      if(products.length === 0){
+        for(const p of seedProducts){
+          await sb.from('products').insert([{
+            name:p.name, cat:p.cat, price:p.price, desc:p.desc,
+            phone:p.phone, image:p.image, custom:false
+          }]);
+        }
+        const refetch = await sb.from('products').select('*').order('id', { ascending:false });
+        products = refetch.data || [];
+      }
+
+      sharedWorking = true;
+      renderCategories();
+      renderProducts();
+
+      // realtime: jab bhi kahin se bhi product add/remove ho, sab phones auto-update ho jayenge
+      sb.channel('products-realtime')
+        .on('postgres_changes', { event:'*', schema:'public', table:'products' }, async ()=>{
+          const { data: fresh } = await sb.from('products').select('*').order('id', { ascending:false });
+          products = fresh || [];
+          renderCategories();
+          renderProducts();
+        })
+        .subscribe();
+
+    } catch(e){
+      const msg = (e && (e.message || e.error_description || JSON.stringify(e))) || "Unknown error";
+      console.warn("Supabase load failed, falling back to local demo mode. Reason:", msg);
+      sharedWorking = false;
+      const saved = localStorage.getItem('dfs_products');
+      products = saved ? JSON.parse(saved) : seedProducts;
+      renderCategories();
+      renderProducts();
+      showDemoModeNotice(msg);
+    }
+  }
+
+  function showDemoModeNotice(reason){
+    const notice = document.createElement('div');
+    notice.style.cssText = "max-width:1240px;margin:0 auto;padding:0 24px 10px;";
+    notice.innerHTML = `<div style="background:rgba(230,57,113,0.12);border:1px solid rgba(230,57,113,0.4);color:#F5F3EE;padding:12px 16px;border-radius:10px;font-size:13px;">
+      ⚠️ Demo mode chal raha hai — products sirf isi phone/browser par save ho rahe hain.<br>
+      <span style="opacity:0.8;font-size:11.5px;">Wajah: ${reason}</span>
+    </div>`;
+    document.querySelector('.cat-wrap').insertAdjacentElement('beforebegin', notice);
+  }
+
+  async function addProductToDb(p, isNew=true){
+    if(sharedWorking && sb){
+      await sb.from('products').insert([{
+        name:p.name, cat:p.cat, price:p.price, desc:p.desc,
+        phone:p.phone, image:p.image, custom:p.custom !== undefined ? p.custom : true
+      }]);
+    } else {
+      if(isNew){
+        products.unshift({ ...p, id: Date.now() });
+      } else {
+        products.push({ ...p, id: Date.now() + Math.random() });
+      }
+      localStorage.setItem('dfs_products', JSON.stringify(products));
+    }
+  }
+
+  async function removeProductFromDb(id){
+    if(sharedWorking && sb){
+      await sb.from('products').delete().eq('id', id);
+    } else {
+      products = products.filter(p=>p.id !== id);
+      localStorage.setItem('dfs_products', JSON.stringify(products));
+    }
+  }
+
+  const catWrap = document.getElementById('catWrap');
+  const grid = document.getElementById('productGrid');
+  const shopTitle = document.getElementById('shopTitle');
+  const searchInput = document.getElementById('searchInput');
+
+  function renderCategories(){
+    catWrap.innerHTML = categories.map(c =>
+      `<button class="chip ${c===activeCat?'active':''}" data-cat="${c}">${c}</button>`
+    ).join('');
+    catWrap.querySelectorAll('.chip').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        activeCat = btn.dataset.cat;
+        renderCategories();
+        renderProducts();
+      });
+    });
+  }
+
+  function toWaNumber(phone){
+    let digits = phone.replace(/[^0-9]/g, '');
+    if(digits.startsWith('0')) digits = '92' + digits.slice(1);
+    return digits;
+  }
+
+  function renderProducts(){
+    let filtered = activeCat==="All" ? products : products.filter(p=>p.cat===activeCat);
+    if(searchTerm.trim().length > 0){
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        p.desc.toLowerCase().includes(term) ||
+        p.cat.toLowerCase().includes(term)
+      );
+    }
+    shopTitle.textContent = searchTerm ? `"${searchTerm}" ke natayej (${filtered.length})` : (activeCat==="All" ? "Sab Products" : activeCat + " Products");
+
+    if(filtered.length === 0){
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">Koi product nahi mila. Kuch aur keyword try karein ya khud product add karein.</div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(p=>{
+      const waNum = toWaNumber(p.phone || DEFAULT_PHONE);
+      const waMsg = encodeURIComponent(`Assalam o Alaikum, mujhe "${p.name}" ke baare mein maloomat chahiye.`);
+      const imgHtml = p.image
+        ? `<img src="${p.image}" alt="${p.name}">`
+        : `<span>${p.emoji || '📦'}</span>`;
+      return `
+      <div class="card-holder">
+        <div class="card" data-id="${p.id}">
+          <div class="card-img">
+            <span class="card-tag">${p.cat}</span>
+            ${p.custom ? `<button class="remove-tag" data-id="${String(p.id)}">Remove</button>` : ''}
+            ${imgHtml}
+          </div>
+          <div class="card-body">
+            <h4>${p.name}</h4>
+            <div class="card-desc">${p.desc || ''}</div>
+            <div class="card-price">Rs ${Number(p.price).toLocaleString()} <small>PKR</small></div>
+            <div class="contact-row">
+              <a class="contact-btn call-btn" href="tel:${(p.phone||DEFAULT_PHONE).replace(/-/g,'')}">📞 Call</a>
+              <a class="contact-btn wa-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // 3D tilt effect
+    grid.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('mousemove', (e)=>{
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const rotateY = ((x / rect.width) - 0.5) * 14;
+        const rotateX = ((y / rect.height) - 0.5) * -14;
+        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+      });
+      card.addEventListener('mouseleave', ()=>{
+        card.style.transform = 'rotateX(0) rotateY(0) scale(1)';
+      });
+    });
+
+    grid.querySelectorAll('.remove-tag').forEach(btn=>{
+      btn.addEventListener('click', async (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if(confirm('Ye product remove karna hai?')){
+          await removeProductFromDb(sharedWorking ? id : parseInt(id));
+          if(!sharedWorking) renderProducts();
+        }
+      });
+    });
+  }
+
+  searchInput.addEventListener('input', (e)=>{
+    searchTerm = e.target.value;
+    renderProducts();
+  });
+
+  // ---------- Sell Modal ----------
+  const sellModalOverlay = document.getElementById('sellModalOverlay');
+  const imgPreview = document.getElementById('imgPreview');
+  let selectedImageData = null;
+
+  document.getElementById('openSellBtn').addEventListener('click', ()=>{
+    sellModalOverlay.classList.add('show');
+  });
+  document.getElementById('closeSellBtn').addEventListener('click', closeSell);
+  document.getElementById('cancelSellBtn').addEventListener('click', closeSell);
+  function closeSell(){
+    sellModalOverlay.classList.remove('show');
+  }
+
+  document.getElementById('pImage').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      selectedImageData = ev.target.result;
+      imgPreview.innerHTML = `<img src="${selectedImageData}" alt="preview">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('submitSellBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('pName').value.trim();
+    const cat = document.getElementById('pCat').value;
+    const price = document.getElementById('pPrice').value.trim();
+    const desc = document.getElementById('pDesc').value.trim();
+    const phone = document.getElementById('pPhone').value.trim() || DEFAULT_PHONE;
+
+    if(!name || !price){
+      alert('Barah-e-karam kam az kam naam aur price to darj karein.');
+      return;
+    }
+
+    const submitBtn = document.getElementById('submitSellBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Add ho raha hai...";
+
+    const newProduct = {
+      name, cat, price: Number(price), desc,
+      emoji: "🛍️",
+      phone,
+      image: selectedImageData,
+      custom: true
+    };
+
+    try{
+      await addProductToDb(newProduct);
+    } catch(e){
+      alert("Product add nahi ho saka, dobara koshish karein.");
+      console.error(e);
+    }
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Product Add Karein";
+
+    // reset form
+    document.getElementById('pName').value = '';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pDesc').value = '';
+    document.getElementById('pPhone').value = DEFAULT_PHONE;
+    document.getElementById('pImage').value = '';
+    imgPreview.innerHTML = 'Koi tasveer nahi chuni gayi';
+    selectedImageData = null;
+
+    closeSell();
+    activeCat = "All";
+    searchTerm = "";
+    searchInput.value = "";
+    if(!sharedWorking){ renderCategories(); renderProducts(); }
+    window.scrollTo({top: document.querySelector('.shop').offsetTop - 80, behavior:'smooth'});
+  });
+
+  // init — wait for window 'load' so the Firebase module script (deferred) finishes first
+  window.addEventListener('load', initStorage);
+</script>
+
+</body>
+</html>
