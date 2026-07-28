@@ -191,6 +191,52 @@
   .conv-item .conv-preview{ font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .conv-item .conv-product{ font-size:10.5px; color:var(--teal); }
 
+  /* ---------- Detail Modal / Carousel ---------- */
+  .detail-modal{ padding:0; overflow:hidden; }
+  .carousel{
+    position:relative; width:100%; height:280px; background:var(--panel); overflow:hidden;
+  }
+  .carousel-track{
+    display:flex; height:100%; transition:transform 0.3s ease;
+  }
+  .carousel-track .slide{
+    min-width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    font-size:90px;
+  }
+  .carousel-track .slide img{ width:100%; height:100%; object-fit:cover; }
+  .carousel-arrow{
+    position:absolute; top:50%; transform:translateY(-50%);
+    background:rgba(11,15,25,0.55); color:var(--cream); border:none;
+    width:34px; height:34px; border-radius:50%; font-size:22px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; line-height:0;
+  }
+  .carousel-arrow.left{ left:10px; }
+  .carousel-arrow.right{ right:10px; }
+  .carousel-dots{
+    position:absolute; bottom:10px; left:0; right:0;
+    display:flex; justify-content:center; gap:6px;
+  }
+  .carousel-dots .dot{
+    width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.4); cursor:pointer;
+  }
+  .carousel-dots .dot.active{ background:var(--gold); }
+  .detail-body{ padding:22px; max-height:40vh; overflow-y:auto; }
+  .detail-modal .close-x{ background:rgba(11,15,25,0.6); border-radius:50%; width:30px; height:30px; z-index:5; }
+
+  .close-x{ background:none; border:none; }
+
+  /* ---------- Share ---------- */
+  .share-btn{ background:var(--panel); color:var(--gold-light); border:1px solid var(--line); }
+  .share-options{ display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+  .share-opt{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel); color:var(--cream); cursor:pointer; font-size:14px; font-weight:500;
+    text-decoration:none;
+  }
+  .share-opt:hover{ border-color:var(--gold); }
+  .share-opt .icon{ font-size:20px; width:24px; text-align:center; }
+
   /* ---------- Hero with 3D floating showcase ---------- */
   .hero{
     max-width:1240px; margin:0 auto;
@@ -333,6 +379,7 @@
   .card-body{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:5px; flex:1; }
   .card-body h4{ font-size:15px; font-weight:600; color:var(--cream); line-height:1.3; }
   .seller-line{ font-size:11.5px; color:var(--teal); font-weight:600; }
+  .stats-line{ font-size:11px; color:var(--muted); margin-top:-2px; }
   .card-desc{ font-size:12.5px; color:var(--muted); line-height:1.4; min-height:32px; }
   .card-price{ font-family:'Playfair Display'; font-weight:700; color:var(--gold-light); font-size:20px; margin-top:2px; }
   .card-price small{ font-family:'Poppins'; font-size:11px; color:var(--muted); font-weight:400; }
@@ -514,6 +561,38 @@
   </div>
 </div>
 
+<!-- Product Detail Modal -->
+<div class="modal-overlay" id="detailModalOverlay">
+  <div class="modal detail-modal">
+    <button class="close-x" id="closeDetailBtn">✕</button>
+    <div class="carousel" id="detailCarousel">
+      <div class="carousel-track" id="carouselTrack"></div>
+      <button class="carousel-arrow left" id="carouselPrev">‹</button>
+      <button class="carousel-arrow right" id="carouselNext">›</button>
+      <div class="carousel-dots" id="carouselDots"></div>
+    </div>
+    <div class="detail-body">
+      <span class="card-tag" id="detailCat"></span>
+      <h3 id="detailName" style="margin-top:10px;"></h3>
+      <div class="seller-line" id="detailSeller"></div>
+      <div class="card-price" id="detailPrice" style="margin:8px 0;"></div>
+      <div class="stats-line" id="detailStats" style="margin-bottom:10px;"></div>
+      <p id="detailDesc" style="color:var(--muted); font-size:14px; line-height:1.6;"></p>
+      <div class="contact-row" id="detailActions" style="margin-top:16px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="shareModalOverlay">
+  <div class="modal" style="max-width:340px;">
+    <button class="close-x" id="closeShareBtn">✕</button>
+    <h3>Share Karein</h3>
+    <p class="sub">Ye product doston ke sath share karein</p>
+    <div class="share-options" id="shareOptions"></div>
+  </div>
+</div>
+
 <!-- Chat Modal -->
 <div class="modal-overlay chat-modal" id="chatModalOverlay">
   <div class="modal">
@@ -569,8 +648,8 @@
 
     <div class="field">
       <label for="pImage">Product Ki Tasveer</label>
-      <input type="file" id="pImage" accept="image/*">
-      <div class="img-preview" id="imgPreview">Koi tasveer nahi chuni gayi</div>
+      <input type="file" id="pImage" accept="image/*" multiple>
+      <div class="img-preview" id="imgPreview" style="height:auto;min-height:100px;flex-wrap:wrap;gap:8px;padding:10px;">Koi tasveer nahi chuni gayi</div>
     </div>
 
     <div class="field">
@@ -669,7 +748,7 @@
     if(sharedWorking && sb){
       await sb.from('products').insert([{
         name:p.name, cat:p.cat, price:p.price, desc:p.desc,
-        phone:p.phone, image:p.image, custom:p.custom !== undefined ? p.custom : true,
+        phone:p.phone, image:p.image, images:p.images || null, custom:p.custom !== undefined ? p.custom : true,
         seller_id: p.seller_id || null, seller_name: p.seller_name || null
       }]);
     } else {
@@ -689,6 +768,19 @@
       products = products.filter(p=>p.id !== id);
       localStorage.setItem('dfs_products', JSON.stringify(products));
     }
+  }
+
+  async function incrementProductStat(productId, field){
+    // update local copy immediately so UI feels instant
+    const local = products.find(x=>String(x.id)===String(productId));
+    if(local){ local[field] = (local[field] || 0) + 1; }
+
+    if(!sharedWorking || !sb) return;
+    try{
+      const { data } = await sb.from('products').select(field).eq('id', productId).single();
+      const current = (data && data[field]) || 0;
+      await sb.from('products').update({ [field]: current + 1 }).eq('id', productId);
+    }catch(e){ console.warn('Stat update failed (non-critical):', e); }
   }
 
   const catWrap = document.getElementById('catWrap');
@@ -740,6 +832,7 @@
         : `<span>${p.emoji || '📦'}</span>`;
       const isOwner = currentUser && p.seller_id === currentUser.id;
       const sellerLine = p.seller_name ? `<div class="seller-line">👤 ${p.seller_name}</div>` : '';
+      const statsLine = p.custom ? `<div class="stats-line">👁 ${p.views || 0} views · 💬 ${p.leads || 0} leads</div>` : '';
       const canMessage = currentUser && p.custom && p.seller_id && !isOwner;
       const msgBtn = canMessage
         ? `<button class="contact-btn msg-seller-btn" data-msgid="${p.seller_id}" data-msgname="${p.seller_name || 'Seller'}" data-msgpid="${p.id}" data-msgpname="${p.name}">💬 Message</button>`
@@ -757,9 +850,11 @@
             ${sellerLine}
             <div class="card-desc">${p.desc || ''}</div>
             <div class="card-price">Rs ${Number(p.price).toLocaleString()} <small>PKR</small></div>
+            ${statsLine}
             <div class="contact-row">
               <a class="contact-btn call-btn" href="tel:${(p.phone||DEFAULT_PHONE).replace(/-/g,'')}">📞 Call</a>
               <a class="contact-btn wa-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</a>
+              <button class="contact-btn share-btn" data-shareid="${p.id}">🔗 Share</button>
               ${msgBtn}
             </div>
           </div>
@@ -771,6 +866,22 @@
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
         openChat(btn.dataset.msgid, btn.dataset.msgname, btn.dataset.msgpid, btn.dataset.msgpname);
+      });
+    });
+
+    grid.querySelectorAll('.share-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const p = filtered.find(x=>String(x.id) === String(btn.dataset.shareid));
+        if(p) openShareModal(p);
+      });
+    });
+
+    grid.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('click', (e)=>{
+        if(e.target.closest('a, button')) return; // links/buttons handle their own action
+        const p = filtered.find(x=>String(x.id) === String(card.dataset.id));
+        if(p) openDetailModal(p);
       });
     });
 
@@ -931,7 +1042,7 @@
   // ---------- Sell Modal ----------
   const sellModalOverlay = document.getElementById('sellModalOverlay');
   const imgPreview = document.getElementById('imgPreview');
-  let selectedImageData = null;
+  let selectedImages = [];
 
   document.getElementById('openSellBtn').addEventListener('click', ()=>{
     if(!currentUser){
@@ -947,15 +1058,38 @@
     sellModalOverlay.classList.remove('show');
   }
 
+  function renderImgPreview(){
+    if(selectedImages.length === 0){
+      imgPreview.innerHTML = 'Koi tasveer nahi chuni gayi';
+      return;
+    }
+    imgPreview.innerHTML = selectedImages.map((img, i) =>
+      `<div style="position:relative; width:70px; height:70px;">
+        <img src="${img}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        <button type="button" data-i="${i}" class="rm-img-btn" style="position:absolute;top:-6px;right:-6px;background:var(--pink);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;">✕</button>
+      </div>`
+    ).join('');
+    imgPreview.querySelectorAll('.rm-img-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedImages.splice(parseInt(btn.dataset.i), 1);
+        renderImgPreview();
+      });
+    });
+  }
+
   document.getElementById('pImage').addEventListener('change', (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev)=>{
-      selectedImageData = ev.target.result;
-      imgPreview.innerHTML = `<img src="${selectedImageData}" alt="preview">`;
-    };
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files || []).slice(0, 6 - selectedImages.length);
+    let loaded = 0;
+    if(files.length === 0) return;
+    files.forEach(file=>{
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        selectedImages.push(ev.target.result);
+        loaded++;
+        if(loaded === files.length) renderImgPreview();
+      };
+      reader.readAsDataURL(file);
+    });
   });
 
   document.getElementById('submitSellBtn').addEventListener('click', async ()=>{
@@ -982,7 +1116,8 @@
       name, cat, price: Number(price), desc,
       emoji: "🛍️",
       phone,
-      image: selectedImageData,
+      image: selectedImages[0] || null,
+      images: JSON.stringify(selectedImages),
       custom: true,
       seller_id: currentUser.id,
       seller_name: currentUser.name
@@ -1004,8 +1139,8 @@
     document.getElementById('pDesc').value = '';
     document.getElementById('pPhone').value = DEFAULT_PHONE;
     document.getElementById('pImage').value = '';
-    imgPreview.innerHTML = 'Koi tasveer nahi chuni gayi';
-    selectedImageData = null;
+    selectedImages = [];
+    renderImgPreview();
 
     closeSell();
     activeCat = "All";
@@ -1016,6 +1151,158 @@
   });
 
   // init — wait for window 'load' so the Firebase module script (deferred) finishes first
+  // ---------- Product Detail & Share ----------
+  function getProductImages(p){
+    if(p.images){
+      try{
+        const arr = JSON.parse(p.images);
+        if(Array.isArray(arr) && arr.length > 0) return arr;
+      }catch(e){}
+    }
+    return p.image ? [p.image] : [];
+  }
+
+  let carouselIndex = 0;
+  let carouselImages = [];
+
+  function openDetailModal(p){
+    carouselImages = getProductImages(p);
+    carouselIndex = 0;
+    renderCarousel(p.emoji);
+
+    document.getElementById('detailCat').textContent = p.cat;
+    document.getElementById('detailName').textContent = p.name;
+    document.getElementById('detailSeller').textContent = p.seller_name ? `👤 ${p.seller_name}` : '';
+    document.getElementById('detailPrice').innerHTML = `Rs ${Number(p.price).toLocaleString()} <small style="font-family:'Poppins';font-size:11px;color:var(--muted);">PKR</small>`;
+    document.getElementById('detailDesc').textContent = p.desc || '';
+    document.getElementById('detailStats').textContent = p.custom ? `👁 ${p.views || 0} views · 💬 ${p.leads || 0} leads` : '';
+
+    // count this as a view (not for the owner viewing their own product)
+    const viewerIsOwner = currentUser && p.seller_id === currentUser.id;
+    if(p.custom && !viewerIsOwner){
+      incrementProductStat(p.id, 'views');
+    }
+
+    const waNum = toWaNumber(p.phone || DEFAULT_PHONE);
+    const waMsg = encodeURIComponent(`Assalam o Alaikum, mujhe "${p.name}" ke baare mein maloomat chahiye.`);
+    const isOwner = currentUser && p.seller_id === currentUser.id;
+    const canMessage = currentUser && p.custom && p.seller_id && !isOwner;
+
+    document.getElementById('detailActions').innerHTML = `
+      <a class="contact-btn call-btn" href="tel:${(p.phone||DEFAULT_PHONE).replace(/-/g,'')}">📞 Call</a>
+      <a class="contact-btn wa-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</a>
+      <button class="contact-btn share-btn" id="detailShareBtn">🔗 Share</button>
+      ${canMessage ? `<button class="contact-btn msg-seller-btn" id="detailMsgBtn">💬 Message</button>` : ''}
+    `;
+    document.getElementById('detailShareBtn').addEventListener('click', ()=> openShareModal(p));
+    if(canMessage){
+      document.getElementById('detailMsgBtn').addEventListener('click', ()=>{
+        openChat(p.seller_id, p.seller_name || 'Seller', p.id, p.name);
+      });
+    }
+
+    document.getElementById('detailModalOverlay').classList.add('show');
+  }
+  document.getElementById('closeDetailBtn').addEventListener('click', ()=>{
+    document.getElementById('detailModalOverlay').classList.remove('show');
+  });
+
+  function renderCarousel(emoji){
+    const track = document.getElementById('carouselTrack');
+    const dots = document.getElementById('carouselDots');
+    if(carouselImages.length === 0){
+      track.innerHTML = `<div class="slide"><span>${emoji || '📦'}</span></div>`;
+      dots.innerHTML = '';
+      document.getElementById('carouselPrev').style.display = 'none';
+      document.getElementById('carouselNext').style.display = 'none';
+      return;
+    }
+    track.innerHTML = carouselImages.map(img => `<div class="slide"><img src="${img}"></div>`).join('');
+    dots.innerHTML = carouselImages.map((_, i) => `<div class="dot ${i===carouselIndex?'active':''}" data-i="${i}"></div>`).join('');
+    dots.querySelectorAll('.dot').forEach(d=>{
+      d.addEventListener('click', ()=>{ carouselIndex = parseInt(d.dataset.i); updateCarouselPosition(); });
+    });
+    const showArrows = carouselImages.length > 1;
+    document.getElementById('carouselPrev').style.display = showArrows ? 'flex' : 'none';
+    document.getElementById('carouselNext').style.display = showArrows ? 'flex' : 'none';
+    updateCarouselPosition();
+  }
+
+  function updateCarouselPosition(){
+    document.getElementById('carouselTrack').style.transform = `translateX(-${carouselIndex * 100}%)`;
+    document.querySelectorAll('#carouselDots .dot').forEach((d,i)=>{
+      d.classList.toggle('active', i === carouselIndex);
+    });
+  }
+
+  document.getElementById('carouselPrev').addEventListener('click', ()=>{
+    carouselIndex = (carouselIndex - 1 + carouselImages.length) % carouselImages.length;
+    updateCarouselPosition();
+  });
+  document.getElementById('carouselNext').addEventListener('click', ()=>{
+    carouselIndex = (carouselIndex + 1) % carouselImages.length;
+    updateCarouselPosition();
+  });
+
+  // basic touch swipe
+  (function(){
+    let startX = 0;
+    const el = document.getElementById('detailCarousel');
+    el.addEventListener('touchstart', (e)=>{ startX = e.touches[0].clientX; });
+    el.addEventListener('touchend', (e)=>{
+      const diff = e.changedTouches[0].clientX - startX;
+      if(Math.abs(diff) > 40 && carouselImages.length > 1){
+        if(diff < 0) carouselIndex = (carouselIndex + 1) % carouselImages.length;
+        else carouselIndex = (carouselIndex - 1 + carouselImages.length) % carouselImages.length;
+        updateCarouselPosition();
+      }
+    });
+  })();
+
+  // ---------- Share Modal ----------
+  function openShareModal(p){
+    const shareUrl = location.origin + location.pathname + '?product=' + p.id;
+    const shareText = `🛍️ *${p.name}*\nRs ${Number(p.price).toLocaleString()} PKR\n\nDekhein *DFS - Duty Free Shop* par:\n${shareUrl}`;
+    const encodedText = encodeURIComponent(shareText);
+    const encodedUrl = encodeURIComponent(shareUrl);
+
+    const opts = document.getElementById('shareOptions');
+    opts.innerHTML = `
+      <a class="share-opt" target="_blank" href="https://wa.me/?text=${encodedText}"><span class="icon">💬</span> WhatsApp</a>
+      <a class="share-opt" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}"><span class="icon">📘</span> Facebook</a>
+      <a class="share-opt" href="sms:?body=${encodedText}"><span class="icon">✉️</span> SMS</a>
+      <button class="share-opt" id="copyLinkBtn"><span class="icon">🔗</span> Link Copy Karein</button>
+      ${navigator.share ? `<button class="share-opt" id="nativeShareBtn"><span class="icon">📤</span> Aur Options</button>` : ''}
+    `;
+    document.getElementById('copyLinkBtn').addEventListener('click', async ()=>{
+      try{
+        await navigator.clipboard.writeText(shareText);
+        alert('Link copy ho gaya!');
+      }catch(e){
+        prompt('Ye copy kar lein:', shareText);
+      }
+    });
+    if(navigator.share){
+      document.getElementById('nativeShareBtn').addEventListener('click', ()=>{
+        navigator.share({ title: 'DFS - Duty Free Shop', text: shareText, url: shareUrl }).catch(()=>{});
+      });
+    }
+    document.getElementById('shareModalOverlay').classList.add('show');
+  }
+  document.getElementById('closeShareBtn').addEventListener('click', ()=>{
+    document.getElementById('shareModalOverlay').classList.remove('show');
+  });
+
+  // Auto-open a product if shared link is opened (?product=ID)
+  function checkSharedProductLink(){
+    const params = new URLSearchParams(location.search);
+    const pid = params.get('product');
+    if(pid){
+      const p = products.find(x=>String(x.id) === String(pid));
+      if(p) openDetailModal(p);
+    }
+  }
+
   // ---------- Chat System ----------
   let activeChat = null; // { otherId, otherName, productId, productName }
   let chatChannel = null;
@@ -1107,6 +1394,12 @@
     const text = input.value.trim();
     if(!text || !activeChat || !currentUser) return;
     input.value = '';
+
+    // Check if this is the buyer's first-ever message on this product (a new "lead")
+    const relatedProduct = products.find(x=>String(x.id) === String(activeChat.productId));
+    const senderIsBuyer = !relatedProduct || relatedProduct.seller_id !== currentUser.id;
+    const isFirstMessageFromMe = senderIsBuyer && chatBody.querySelectorAll('.msg-mine').length === 0;
+
     const { data, error } = await sb.from('messages').insert([{
       product_id: activeChat.productId,
       sender_id: currentUser.id,
@@ -1120,6 +1413,10 @@
       alert('Message bhejne mein masla hua.\nWajah: ' + (error.message || JSON.stringify(error)));
       console.error(error);
       return;
+    }
+
+    if(isFirstMessageFromMe){
+      incrementProductStat(activeChat.productId, 'leads');
     }
 
     // Turant apna message dikhayein, realtime ka intezar na karein
