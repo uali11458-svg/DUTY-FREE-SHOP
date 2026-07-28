@@ -26,6 +26,15 @@
     --muted:#9AA1B0;
     --line: rgba(212,175,55,0.18);
   }
+  body.light-mode{
+    --navy:#FBF6EA;
+    --navy2:#FFFFFF;
+    --panel:#FFFFFF;
+    --cream:#231F20;
+    --muted:#6B6459;
+    --line: rgba(11,15,25,0.12);
+  }
+  body, .card, .panel-surface{ transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{
@@ -72,7 +81,7 @@
     background:var(--panel);
     border:1px solid var(--line);
     border-radius:30px;
-    padding:12px 20px 12px 42px;
+    padding:12px 36px 12px 42px;
     color:var(--cream);
     font-family:'Poppins'; font-size:14px;
   }
@@ -82,6 +91,11 @@
     position:absolute; left:16px; top:50%; transform:translateY(-50%);
     opacity:0.6; pointer-events:none;
   }
+  #searchClearBtn{
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px;
+  }
+  #searchClearBtn:hover{ color:var(--pink); }
   .sell-btn{
     background:linear-gradient(135deg, var(--gold), var(--gold-light));
     color:var(--navy);
@@ -127,6 +141,13 @@
     font-size:13px; padding:4px 8px;
   }
   .user-badge .logout-x:hover{ color:var(--pink); }
+
+  .theme-toggle-btn{
+    background:var(--panel); border:1px solid var(--line); color:var(--gold-light);
+    width:42px; height:42px; border-radius:50%; font-size:17px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .theme-toggle-btn:hover{ border-color:var(--gold); }
 
   .chats-btn{
     background:var(--panel);
@@ -357,6 +378,35 @@
     color:var(--navy); border-color:transparent;
   }
 
+  .filter-bar{
+    max-width:1240px; margin:0 auto;
+    padding:0 24px 20px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+  .price-range-group{
+    display:flex; align-items:center; gap:8px;
+  }
+  .price-range-group input{
+    width:100px; padding:9px 12px; border-radius:20px;
+    border:1px solid var(--line); background:var(--panel); color:var(--cream);
+    font-family:'Poppins'; font-size:13px;
+  }
+  .price-range-group input:focus{ outline:2px solid var(--teal); }
+  .price-range-group span{ color:var(--muted); }
+  .apply-price-btn{
+    background:var(--teal); color:var(--navy); border:none; padding:9px 16px;
+    border-radius:20px; font-weight:700; font-size:12.5px; cursor:pointer;
+  }
+  .clear-price-btn{
+    background:var(--pink); color:white; border:none; width:28px; height:28px;
+    border-radius:50%; cursor:pointer; font-size:12px;
+  }
+  .sort-select{
+    padding:10px 16px; border-radius:20px; border:1px solid var(--line);
+    background:var(--panel); color:var(--cream); font-family:'Poppins'; font-size:13px; cursor:pointer;
+  }
+  .sort-select:focus{ outline:2px solid var(--teal); }
+
   /* ---------- Product grid with 3D tilt ---------- */
   .shop{ max-width:1240px; margin:0 auto; padding:10px 24px 90px; }
   .shop h2{ font-size:26px; color:var(--gold-light); margin-bottom:20px; }
@@ -549,6 +599,16 @@
 </style>
 </head>
 <body>
+<script>
+  (function(){
+    try{
+      if(localStorage.getItem('dfs_theme') === 'light'){
+        document.body.classList.add('light-mode');
+      }
+    }catch(e){}
+  })();
+</script>
+
 
 <div id="splashScreen">
   <div class="splash-inner">
@@ -565,7 +625,9 @@
     <div class="search-box">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Products dhoondein — jese 'kurti', 'mobile', 'shoes'...">
+      <button id="searchClearBtn" style="display:none;">✕</button>
     </div>
+    <button class="theme-toggle-btn" id="themeToggleBtn" title="Dark/Light Mode">🌙</button>
     <button class="chats-btn" id="openInboxBtn" style="display:none;">💬 Mera Chat</button>
     <div id="authArea">
       <button class="login-btn" id="openAuthBtn">👤 Login / Signup</button>
@@ -597,6 +659,22 @@
 </section>
 
 <div class="cat-wrap" id="catWrap"></div>
+
+<div class="filter-bar">
+  <div class="price-range-group">
+    <input type="number" id="minPriceInput" placeholder="Min Rs" min="0">
+    <span>—</span>
+    <input type="number" id="maxPriceInput" placeholder="Max Rs" min="0">
+    <button id="applyPriceBtn" class="apply-price-btn">Filter</button>
+    <button id="clearPriceBtn" class="clear-price-btn" style="display:none;">✕</button>
+  </div>
+  <select id="sortSelect" class="sort-select">
+    <option value="newest">Sort: Newest</option>
+    <option value="price_asc">Price: Low to High</option>
+    <option value="price_desc">Price: High to Low</option>
+    <option value="most_viewed">Most Viewed</option>
+  </select>
+</div>
 
 <section class="shop">
   <h2 id="shopTitle">Sab Products</h2>
@@ -832,6 +910,9 @@
   const categories = ["All", "Fashion", "Electronics", "Home", "Beauty", "Grocery", "Handmade", "Other"];
   let activeCat = "All";
   let searchTerm = "";
+  let minPriceFilter = null;
+  let maxPriceFilter = null;
+  let sortOrder = 'newest';
   let products = [];
 
   // ---------- Shared Storage (Supabase) ----------
@@ -975,6 +1056,19 @@
     }catch(e){ console.warn('Wishlist toggle failed:', e); }
   }
 
+  // ---------- Dark/Light Theme Toggle ----------
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  function updateThemeIcon(){
+    themeToggleBtn.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+  }
+  updateThemeIcon();
+  themeToggleBtn.addEventListener('click', ()=>{
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    try{ localStorage.setItem('dfs_theme', isLight ? 'light' : 'dark'); }catch(e){}
+    updateThemeIcon();
+  });
+
   const catWrap = document.getElementById('catWrap');
   const grid = document.getElementById('productGrid');
   const shopTitle = document.getElementById('shopTitle');
@@ -1009,10 +1103,27 @@
         p.cat.toLowerCase().includes(term)
       );
     }
+
+    if(minPriceFilter !== null){
+      filtered = filtered.filter(p => Number(p.price) >= minPriceFilter);
+    }
+    if(maxPriceFilter !== null){
+      filtered = filtered.filter(p => Number(p.price) <= maxPriceFilter);
+    }
+
+    if(sortOrder === 'price_asc'){
+      filtered = [...filtered].sort((a,b)=> Number(a.price) - Number(b.price));
+    } else if(sortOrder === 'price_desc'){
+      filtered = [...filtered].sort((a,b)=> Number(b.price) - Number(a.price));
+    } else if(sortOrder === 'most_viewed'){
+      filtered = [...filtered].sort((a,b)=> (Number(b.views)||0) - (Number(a.views)||0));
+    }
+    // 'newest' = default order already (products loaded ordered by id desc)
+
     shopTitle.textContent = searchTerm ? `"${searchTerm}" ke natayej (${filtered.length})` : (activeCat==="All" ? "Sab Products" : activeCat + " Products");
 
     if(filtered.length === 0){
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">Koi product nahi mila. Kuch aur keyword try karein ya khud product add karein.</div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">Koi product nahi mila. Kuch aur keyword ya filter try karein.</div>`;
       return;
     }
 
@@ -1118,6 +1229,34 @@
 
   searchInput.addEventListener('input', (e)=>{
     searchTerm = e.target.value;
+    document.getElementById('searchClearBtn').style.display = searchTerm ? 'block' : 'none';
+    renderProducts();
+  });
+  document.getElementById('searchClearBtn').addEventListener('click', ()=>{
+    searchTerm = '';
+    searchInput.value = '';
+    document.getElementById('searchClearBtn').style.display = 'none';
+    renderProducts();
+  });
+
+  // ---------- Price Range & Sort ----------
+  document.getElementById('applyPriceBtn').addEventListener('click', ()=>{
+    const minVal = document.getElementById('minPriceInput').value;
+    const maxVal = document.getElementById('maxPriceInput').value;
+    minPriceFilter = minVal !== '' ? Number(minVal) : null;
+    maxPriceFilter = maxVal !== '' ? Number(maxVal) : null;
+    document.getElementById('clearPriceBtn').style.display = (minPriceFilter !== null || maxPriceFilter !== null) ? 'flex' : 'none';
+    renderProducts();
+  });
+  document.getElementById('clearPriceBtn').addEventListener('click', ()=>{
+    minPriceFilter = null; maxPriceFilter = null;
+    document.getElementById('minPriceInput').value = '';
+    document.getElementById('maxPriceInput').value = '';
+    document.getElementById('clearPriceBtn').style.display = 'none';
+    renderProducts();
+  });
+  document.getElementById('sortSelect').addEventListener('change', (e)=>{
+    sortOrder = e.target.value;
     renderProducts();
   });
 
