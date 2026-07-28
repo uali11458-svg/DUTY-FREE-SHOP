@@ -142,6 +142,13 @@
   }
   .user-badge .logout-x:hover{ color:var(--pink); }
 
+  .city-filter-select{
+    padding:11px 14px; border-radius:24px; border:1px solid var(--line);
+    background:var(--panel); color:var(--cream); font-family:'Poppins'; font-size:13px; cursor:pointer;
+    flex-shrink:0;
+  }
+  .city-filter-select:focus{ outline:2px solid var(--teal); }
+
   .theme-toggle-btn{
     background:var(--panel); border:1px solid var(--line); color:var(--gold-light);
     width:42px; height:42px; border-radius:50%; font-size:17px; cursor:pointer;
@@ -542,6 +549,11 @@
   .card-body{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:5px; flex:1; }
   .card-body h4{ font-size:15px; font-weight:600; color:var(--cream); line-height:1.3; }
   .seller-line{ font-size:11.5px; color:var(--teal); font-weight:600; }
+  .location-badge{
+    font-size:12px; font-weight:700; color:var(--gold-light);
+    background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.35);
+    padding:5px 12px; border-radius:20px; margin-top:8px;
+  }
   .stats-line{ font-size:11px; color:var(--muted); margin-top:-2px; }
   .card-desc{ font-size:12.5px; color:var(--muted); line-height:1.4; min-height:32px; }
   .card-price{ font-family:'Playfair Display'; font-weight:700; color:var(--gold-light); font-size:20px; margin-top:2px; }
@@ -689,6 +701,21 @@
       <input type="text" id="searchInput" placeholder="Products dhoondein — jese 'kurti', 'mobile', 'shoes'...">
       <button id="searchClearBtn" style="display:none;">✕</button>
     </div>
+    <select id="cityFilterSelect" class="city-filter-select">
+      <option value="All">🌍 All Pakistan</option>
+      <option value="Karachi">Karachi</option>
+      <option value="Lahore">Lahore</option>
+      <option value="Islamabad">Islamabad</option>
+      <option value="Rawalpindi">Rawalpindi</option>
+      <option value="Peshawar">Peshawar</option>
+      <option value="Quetta">Quetta</option>
+      <option value="Multan">Multan</option>
+      <option value="Faisalabad">Faisalabad</option>
+      <option value="Sialkot">Sialkot</option>
+      <option value="Gujranwala">Gujranwala</option>
+      <option value="Hyderabad">Hyderabad</option>
+      <option value="Other Pakistan City">Other City</option>
+    </select>
     <button class="theme-toggle-btn" id="themeToggleBtn" title="Dark/Light Mode">🌙</button>
     <button class="chats-btn" id="openInboxBtn" style="display:none;">💬 Mera Chat</button>
     <div id="authArea">
@@ -857,6 +884,7 @@
       <span class="condition-tag" id="detailCondition" style="position:static; display:inline-block; margin-left:6px;"></span>
       <h3 id="detailName" style="margin-top:10px;"></h3>
       <div class="seller-line" id="detailSeller"></div>
+      <div class="location-badge" id="detailLocation" style="display:none;"></div>
       <div class="card-price" id="detailPrice" style="margin:8px 0;"></div>
       <div class="stats-line" id="detailStats" style="margin-bottom:10px;"></div>
       <p id="detailDesc" style="color:var(--muted); font-size:14px; line-height:1.6;"></p>
@@ -989,6 +1017,24 @@
     </div>
 
     <div class="field">
+      <label for="pCity">Shehar (City)</label>
+      <select id="pCity">
+        <option>Karachi</option>
+        <option>Lahore</option>
+        <option>Islamabad</option>
+        <option>Rawalpindi</option>
+        <option>Peshawar</option>
+        <option>Quetta</option>
+        <option>Multan</option>
+        <option>Faisalabad</option>
+        <option>Sialkot</option>
+        <option>Gujranwala</option>
+        <option>Hyderabad</option>
+        <option>Other Pakistan City</option>
+      </select>
+    </div>
+
+    <div class="field">
       <label for="pPrice">Price (Rs)</label>
       <input type="number" id="pPrice" placeholder="Jese: 1500">
     </div>
@@ -1035,6 +1081,7 @@
   let activeCat = "All";
   let searchTerm = "";
   let minPriceFilter = null;
+  let cityFilter = 'All';
   let maxPriceFilter = null;
   let sortOrder = 'newest';
   let products = [];
@@ -1113,7 +1160,7 @@
   async function addProductToDb(p, isNew=true){
     if(sharedWorking && sb){
       await sb.from('products').insert([{
-        name:p.name, cat:p.cat, condition:p.condition || null, price:p.price, desc:p.desc,
+        name:p.name, cat:p.cat, condition:p.condition || null, city:p.city || null, price:p.price, desc:p.desc,
         phone:p.phone, image:p.image, images:p.images || null, custom:p.custom !== undefined ? p.custom : true,
         seller_id: p.seller_id || null, seller_name: p.seller_name || null
       }]);
@@ -1219,6 +1266,11 @@
 
   function renderProducts(){
     let filtered = activeCat==="All" ? products : products.filter(p=>p.cat===activeCat);
+
+    if(cityFilter !== 'All'){
+      filtered = filtered.filter(p => p.city === cityFilter);
+    }
+
     if(searchTerm.trim().length > 0){
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(p =>
@@ -1381,6 +1433,10 @@
   });
   document.getElementById('sortSelect').addEventListener('change', (e)=>{
     sortOrder = e.target.value;
+    renderProducts();
+  });
+  document.getElementById('cityFilterSelect').addEventListener('change', (e)=>{
+    cityFilter = e.target.value;
     renderProducts();
   });
 
@@ -1790,6 +1846,7 @@
     const name = document.getElementById('pName').value.trim();
     const cat = document.getElementById('pCat').value;
     const condition = document.getElementById('pCondition').value;
+    const city = document.getElementById('pCity').value;
     const price = document.getElementById('pPrice').value.trim();
     const desc = document.getElementById('pDesc').value.trim();
     const phone = document.getElementById('pPhone').value.trim() || DEFAULT_PHONE;
@@ -1804,7 +1861,7 @@
     submitBtn.textContent = "Add ho raha hai...";
 
     const newProduct = {
-      name, cat, condition, price: Number(price), desc,
+      name, cat, condition, city, price: Number(price), desc,
       emoji: "🛍️",
       phone,
       image: selectedImages[0] || null,
@@ -1872,6 +1929,13 @@
     }
     document.getElementById('detailName').textContent = p.name;
     document.getElementById('detailSeller').textContent = p.seller_name ? `👤 ${p.seller_name}` : '';
+    const locEl = document.getElementById('detailLocation');
+    if(p.city){
+      locEl.textContent = `📍 ${p.city}, Pakistan`;
+      locEl.style.display = 'inline-block';
+    } else {
+      locEl.style.display = 'none';
+    }
     document.getElementById('detailPrice').innerHTML = `Rs ${Number(p.price).toLocaleString()} <small style="font-family:'Poppins';font-size:11px;color:var(--muted);">PKR</small>`;
     document.getElementById('detailDesc').textContent = p.desc || '';
     document.getElementById('detailStats').textContent = p.custom ? `👁 ${p.views || 0} views · 💬 ${p.leads || 0} leads` : '';
