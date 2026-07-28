@@ -404,6 +404,13 @@
     text-transform:uppercase; letter-spacing:0.5px;
     border:1px solid var(--line);
   }
+  .condition-tag{
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    font-size:10px; font-weight:700; padding:4px 10px; border-radius:20px;
+    text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .cond-new{ background:rgba(41,197,184,0.85); color:var(--navy); }
+  .cond-used{ background:rgba(212,175,55,0.85); color:var(--navy); }
   .remove-tag{
     position:absolute; top:10px; right:10px;
     background:rgba(230,57,113,0.85);
@@ -510,9 +517,47 @@
   button:focus-visible, .chip:focus-visible, input:focus-visible{
     outline:3px solid var(--teal); outline-offset:2px;
   }
+  #splashScreen{
+    position:fixed; inset:0; z-index:9999;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(212,175,55,0.14), transparent 60%),
+      radial-gradient(900px 500px at 90% 100%, rgba(41,197,184,0.12), transparent 55%),
+      var(--navy);
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity 0.5s ease;
+  }
+  #splashScreen.fade-out{ opacity:0; pointer-events:none; }
+  .splash-inner{ text-align:center; }
+  .splash-text{
+    font-family:'Playfair Display', serif; font-weight:800; font-size:52px;
+    background:linear-gradient(135deg, var(--gold-light), var(--gold));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    letter-spacing:2px;
+  }
+  .splash-sub{
+    font-size:12px; font-weight:600; letter-spacing:5px; color:var(--muted); margin-top:2px;
+  }
+  .splash-loader{
+    width:36px; height:36px; margin:28px auto 0;
+    border:3px solid var(--line); border-top-color:var(--gold);
+    border-radius:50%; animation:splash-spin 0.8s linear infinite;
+  }
+  @keyframes splash-spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){
+    .splash-loader{ animation:none; }
+  }
 </style>
 </head>
 <body>
+
+<div id="splashScreen">
+  <div class="splash-inner">
+    <div class="splash-text">DFS</div>
+    <div class="splash-sub">DUTY FREE SHOP</div>
+    <div class="splash-loader"></div>
+  </div>
+</div>
+
 
 <header>
   <div class="nav-wrap">
@@ -668,7 +713,8 @@
       <div class="carousel-dots" id="carouselDots"></div>
     </div>
     <div class="detail-body">
-      <span class="card-tag" id="detailCat"></span>
+      <span class="card-tag" id="detailCat" style="position:static; display:inline-block;"></span>
+      <span class="condition-tag" id="detailCondition" style="position:static; display:inline-block; margin-left:6px;"></span>
       <h3 id="detailName" style="margin-top:10px;"></h3>
       <div class="seller-line" id="detailSeller"></div>
       <div class="card-price" id="detailPrice" style="margin:8px 0;"></div>
@@ -729,6 +775,14 @@
         <option>Grocery</option>
         <option>Handmade</option>
         <option>Other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="pCondition">Product Ki Halat</label>
+      <select id="pCondition">
+        <option value="New">New</option>
+        <option value="Used">Used</option>
       </select>
     </div>
 
@@ -807,6 +861,8 @@
       sharedWorking = true;
       renderCategories();
       renderProducts();
+      hideSplashScreen();
+      checkSharedProductLink();
 
       // realtime: jab bhi kahin se bhi product add/remove ho, sab phones auto-update ho jayenge
       sb.channel('products-realtime')
@@ -827,7 +883,16 @@
       renderCategories();
       renderProducts();
       showDemoModeNotice(msg);
+      hideSplashScreen();
+      checkSharedProductLink();
     }
+  }
+
+  function hideSplashScreen(){
+    const splash = document.getElementById('splashScreen');
+    if(!splash) return;
+    splash.classList.add('fade-out');
+    setTimeout(()=>{ splash.style.display = 'none'; }, 550);
   }
 
   function showDemoModeNotice(reason){
@@ -843,7 +908,7 @@
   async function addProductToDb(p, isNew=true){
     if(sharedWorking && sb){
       await sb.from('products').insert([{
-        name:p.name, cat:p.cat, price:p.price, desc:p.desc,
+        name:p.name, cat:p.cat, condition:p.condition || null, price:p.price, desc:p.desc,
         phone:p.phone, image:p.image, images:p.images || null, custom:p.custom !== undefined ? p.custom : true,
         seller_id: p.seller_id || null, seller_name: p.seller_name || null
       }]);
@@ -973,6 +1038,7 @@
         <div class="card" data-id="${p.id}">
           <div class="card-img">
             <span class="card-tag">${p.cat}</span>
+            ${p.condition ? `<span class="condition-tag ${p.condition === 'New' ? 'cond-new' : 'cond-used'}">${p.condition}</span>` : ''}
             ${p.custom && isOwner ? `<button class="remove-tag" data-id="${String(p.id)}">Remove</button>` : ''}
             ${heartBtn}
             ${imgHtml}
@@ -1429,6 +1495,7 @@
     }
     const name = document.getElementById('pName').value.trim();
     const cat = document.getElementById('pCat').value;
+    const condition = document.getElementById('pCondition').value;
     const price = document.getElementById('pPrice').value.trim();
     const desc = document.getElementById('pDesc').value.trim();
     const phone = document.getElementById('pPhone').value.trim() || DEFAULT_PHONE;
@@ -1443,7 +1510,7 @@
     submitBtn.textContent = "Add ho raha hai...";
 
     const newProduct = {
-      name, cat, price: Number(price), desc,
+      name, cat, condition, price: Number(price), desc,
       emoji: "🛍️",
       phone,
       image: selectedImages[0] || null,
@@ -1501,6 +1568,14 @@
     renderCarousel(p.emoji);
 
     document.getElementById('detailCat').textContent = p.cat;
+    const condEl = document.getElementById('detailCondition');
+    if(p.condition){
+      condEl.textContent = p.condition;
+      condEl.className = 'condition-tag ' + (p.condition === 'New' ? 'cond-new' : 'cond-used');
+      condEl.style.display = 'inline-block';
+    } else {
+      condEl.style.display = 'none';
+    }
     document.getElementById('detailName').textContent = p.name;
     document.getElementById('detailSeller').textContent = p.seller_name ? `👤 ${p.seller_name}` : '';
     document.getElementById('detailPrice').innerHTML = `Rs ${Number(p.price).toLocaleString()} <small style="font-family:'Poppins';font-size:11px;color:var(--muted);">PKR</small>`;
@@ -1821,6 +1896,7 @@
   }
 
   window.addEventListener('load', initStorage);
+  setTimeout(hideSplashScreen, 6000); // safety fallback
 </script>
 
 </body>
