@@ -525,7 +525,7 @@
   .card-desc{ font-size:12.5px; color:var(--muted); line-height:1.4; min-height:32px; }
   .card-price{ font-family:'Playfair Display'; font-weight:700; color:var(--gold-light); font-size:20px; margin-top:2px; }
   .card-price small{ font-family:'Poppins'; font-size:11px; color:var(--muted); font-weight:400; }
-  .contact-row{ margin-top:auto; display:flex; gap:8px; padding-top:8px; }
+  .contact-row{ margin-top:auto; display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-top:8px; }
   .contact-btn{
     flex:1; text-align:center;
     padding:10px 6px; border-radius:8px;
@@ -1217,14 +1217,13 @@
           <div class="card-body">
             <h4>${p.name}</h4>
             ${sellerLine}
-            <div class="card-desc">${p.desc || ''}</div>
             <div class="card-price">Rs ${Number(p.price).toLocaleString()} <small>PKR</small></div>
             ${statsLine}
             <div class="contact-row">
               <a class="contact-btn call-btn" href="tel:${(p.phone||DEFAULT_PHONE).replace(/-/g,'')}">📞 Call</a>
               <a class="contact-btn wa-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</a>
               <button class="contact-btn share-btn" data-shareid="${p.id}">🔗 Share</button>
-              ${msgBtn}
+              ${msgBtn || '<span></span>'}
             </div>
           </div>
         </div>
