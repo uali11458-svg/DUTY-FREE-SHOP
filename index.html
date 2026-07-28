@@ -1952,15 +1952,17 @@
 
   // ---- Online presence (global, tracks all logged-in users currently on the site) ----
   function setupPresence(){
-    if(!sb || !currentUser || !sharedWorking) return;
-    if(presenceChannel){ sb.removeChannel(presenceChannel); }
+    if(!sb || !currentUser) return;
+    if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel = null; }
     presenceChannel = sb.channel('dfs-online-users', { config: { presence: { key: currentUser.id } } });
     presenceChannel.on('presence', { event: 'sync' }, ()=>{
       const state = presenceChannel.presenceState();
       onlineUserIds = new Set(Object.keys(state));
+      console.log('Online users updated:', Array.from(onlineUserIds));
       updateChatStatusIndicator();
     });
     presenceChannel.subscribe(async (status)=>{
+      console.log('Presence channel status:', status);
       if(status === 'SUBSCRIBED'){
         await presenceChannel.track({ online_at: new Date().toISOString() });
       }
