@@ -207,16 +207,24 @@
   .pcb-price{ font-size:12px; color:var(--gold-light); font-weight:700; }
 
   .chat-body{ flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
+  .msg-bubble-wrap{ display:flex; align-items:flex-end; gap:5px; max-width:85%; }
+  .msg-bubble-wrap.mine{ align-self:flex-end; }
+  .msg-bubble-wrap.theirs{ align-self:flex-start; }
+  .msg-delete-btn{
+    background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer;
+    opacity:0.45; flex-shrink:0; padding:4px;
+  }
+  .msg-delete-btn:hover{ opacity:1; color:var(--pink); }
   .msg-bubble{
-    max-width:75%; padding:10px 14px; border-radius:16px; font-size:13.5px; line-height:1.4;
+    padding:10px 14px; border-radius:16px; font-size:13.5px; line-height:1.4;
     box-shadow:0 3px 10px rgba(0,0,0,0.18);
   }
   .msg-mine{
-    align-self:flex-end; background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
     border-bottom-right-radius:4px;
   }
   .msg-theirs{
-    align-self:flex-start; background:var(--panel); color:var(--cream); border:1px solid var(--line);
+    background:var(--panel); color:var(--cream); border:1px solid var(--line);
     border-bottom-left-radius:4px;
   }
   .msg-meta{ font-size:10px; opacity:0.7; margin-top:4px; display:flex; align-items:center; gap:4px; justify-content:flex-end; }
@@ -360,6 +368,26 @@
   .wishlist-item .wl-info{ flex:1; }
   .wishlist-item .wl-name{ font-size:13.5px; font-weight:600; }
   .wishlist-item .wl-price{ font-size:13px; color:var(--gold-light); font-weight:700; }
+
+  .myad-item{
+    display:flex; gap:12px; align-items:center; padding:10px; border:1px solid var(--line);
+    border-radius:12px; margin-bottom:10px;
+  }
+  .myad-item .wl-img{
+    width:56px; height:56px; border-radius:8px; overflow:hidden; flex-shrink:0;
+    background:var(--panel); display:flex; align-items:center; justify-content:center; font-size:26px; cursor:pointer;
+  }
+  .myad-item .wl-img img{ width:100%; height:100%; object-fit:cover; }
+  .myad-item .wl-info{ flex:1; min-width:0; cursor:pointer; }
+  .myad-item .wl-name{ font-size:13.5px; font-weight:600; }
+  .myad-item .wl-price{ font-size:13px; color:var(--gold-light); font-weight:700; }
+  .myad-item .myad-stats{ font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .myad-item .myad-actions{ display:flex; flex-direction:column; gap:6px; }
+  .myad-edit-btn, .myad-delete-btn{
+    border:none; border-radius:8px; padding:6px 10px; font-size:11.5px; font-weight:600; cursor:pointer;
+  }
+  .myad-edit-btn{ background:var(--teal); color:var(--navy); }
+  .myad-delete-btn{ background:var(--pink); color:white; }
 
   /* ---------- Hero with 3D floating showcase ---------- */
   .hero{
@@ -815,6 +843,7 @@
     <div class="account-tabs">
       <button class="account-tab active" data-tab="profile">Profile</button>
       <button class="account-tab" data-tab="wishlist">❤️ Wishlist</button>
+      <button class="account-tab" data-tab="myads">📦 My Ads</button>
     </div>
 
     <div id="profileTab">
@@ -855,6 +884,70 @@
 
     <div id="wishlistTab" style="display:none;">
       <div id="wishlistItems" style="margin-top:14px;"></div>
+    </div>
+
+    <div id="myAdsTab" style="display:none;">
+      <div id="myAdsItems" style="margin-top:14px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal-overlay" id="editModalOverlay">
+  <div class="modal" style="max-width:460px;">
+    <button class="close-x" id="closeEditBtn">✕</button>
+    <h3>✏️ Ad Edit Karein</h3>
+    <p class="sub">Details update karein aur save karein</p>
+
+    <div class="field">
+      <label for="editName">Product Ka Naam</label>
+      <input type="text" id="editName">
+    </div>
+
+    <div class="field">
+      <label for="editCat">Category</label>
+      <select id="editCat">
+        <option>Fashion</option>
+        <option>Electronics</option>
+        <option>Home</option>
+        <option>Beauty</option>
+        <option>Grocery</option>
+        <option>Handmade</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="editCity">Shehar (City)</label>
+      <select id="editCity">
+        <option>Karachi</option>
+        <option>Lahore</option>
+        <option>Islamabad</option>
+        <option>Rawalpindi</option>
+        <option>Peshawar</option>
+        <option>Quetta</option>
+        <option>Multan</option>
+        <option>Faisalabad</option>
+        <option>Sialkot</option>
+        <option>Gujranwala</option>
+        <option>Hyderabad</option>
+        <option>Other Pakistan City</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="editPrice">Price (Rs)</label>
+      <input type="number" id="editPrice">
+    </div>
+
+    <div class="field">
+      <label for="editDesc">Description</label>
+      <textarea id="editDesc" rows="3"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelEditBtn">Cancel</button>
+      <button class="btn-primary" id="saveEditBtn">Save Karein</button>
     </div>
   </div>
 </div>
@@ -1631,7 +1724,9 @@
     document.querySelectorAll('.account-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab === which));
     document.getElementById('profileTab').style.display = which === 'profile' ? 'block' : 'none';
     document.getElementById('wishlistTab').style.display = which === 'wishlist' ? 'block' : 'none';
+    document.getElementById('myAdsTab').style.display = which === 'myads' ? 'block' : 'none';
     if(which === 'wishlist') renderWishlistTab();
+    if(which === 'myads') renderMyAdsTab();
   }
 
   document.getElementById('avatarInput').addEventListener('change', (e)=>{
@@ -1755,7 +1850,122 @@
     });
   }
 
-  // ---------- Sell Modal ----------
+  // ---------- My Ads Tab ----------
+  function renderMyAdsTab(){
+    const container = document.getElementById('myAdsItems');
+    if(!currentUser){ container.innerHTML = ''; return; }
+    const items = products.filter(p => p.seller_id === currentUser.id);
+    if(items.length === 0){
+      container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0;">Aapne abhi koi product post nahi kiya.</div>';
+      return;
+    }
+    container.innerHTML = items.map(p=>{
+      const imgInner = p.image ? `<img src="${p.image}">` : `<span>${p.emoji || '📦'}</span>`;
+      return `
+      <div class="myad-item" data-id="${p.id}">
+        <div class="wl-img">${imgInner}</div>
+        <div class="wl-info">
+          <div class="wl-name">${p.name}</div>
+          <div class="wl-price">Rs ${Number(p.price).toLocaleString()}</div>
+          <div class="myad-stats">👁 ${p.views||0} views · 💬 ${p.leads||0} leads</div>
+        </div>
+        <div class="myad-actions">
+          <button class="myad-edit-btn" data-id="${p.id}">✏️ Edit</button>
+          <button class="myad-delete-btn" data-id="${p.id}">🗑️ Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    container.querySelectorAll('.wl-img, .wl-info').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const id = el.closest('.myad-item').dataset.id;
+        const p = products.find(x=>String(x.id)===String(id));
+        if(p){ accountModalOverlay.classList.remove('show'); openDetailModal(p); }
+      });
+    });
+    container.querySelectorAll('.myad-edit-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const p = products.find(x=>String(x.id)===String(btn.dataset.id));
+        if(p) openEditModal(p);
+      });
+    });
+    container.querySelectorAll('.myad-delete-btn').forEach(btn=>{
+      btn.addEventListener('click', async (e)=>{
+        e.stopPropagation();
+        if(!confirm('Ye product delete karna hai?')) return;
+        await removeProductFromDb(sharedWorking ? btn.dataset.id : parseInt(btn.dataset.id));
+        if(!sharedWorking) renderProducts();
+        renderMyAdsTab();
+      });
+    });
+  }
+
+  // ---------- Edit Product Modal ----------
+  let editingProductId = null;
+  const editModalOverlay = document.getElementById('editModalOverlay');
+
+  function openEditModal(p){
+    editingProductId = p.id;
+    document.getElementById('editName').value = p.name || '';
+    document.getElementById('editCat').value = p.cat || 'Fashion';
+    document.getElementById('editCity').value = p.city || 'Karachi';
+    document.getElementById('editPrice').value = p.price || '';
+    document.getElementById('editDesc').value = p.desc || '';
+    editModalOverlay.classList.add('show');
+  }
+  document.getElementById('closeEditBtn').addEventListener('click', ()=>{
+    editModalOverlay.classList.remove('show');
+    editingProductId = null;
+  });
+  document.getElementById('cancelEditBtn').addEventListener('click', ()=>{
+    editModalOverlay.classList.remove('show');
+    editingProductId = null;
+  });
+
+  document.getElementById('saveEditBtn').addEventListener('click', async ()=>{
+    if(!editingProductId || !currentUser) return;
+    const name = document.getElementById('editName').value.trim();
+    const cat = document.getElementById('editCat').value;
+    const city = document.getElementById('editCity').value;
+    const price = document.getElementById('editPrice').value.trim();
+    const desc = document.getElementById('editDesc').value.trim();
+
+    if(!name || !price){
+      alert('Barah-e-karam naam aur price zaroor bharein.');
+      return;
+    }
+
+    const btn = document.getElementById('saveEditBtn');
+    btn.disabled = true;
+    btn.textContent = 'Save ho raha hai...';
+
+    const updates = { name, cat, city, price: Number(price), desc };
+
+    try{
+      if(sharedWorking && sb){
+        const { error } = await sb.from('products').update(updates).eq('id', editingProductId);
+        if(error) throw error;
+      }
+      // update local copy immediately
+      const local = products.find(x=>String(x.id) === String(editingProductId));
+      if(local){ Object.assign(local, updates); }
+
+      editModalOverlay.classList.remove('show');
+      editingProductId = null;
+      renderProducts();
+      renderMyAdsTab();
+      showToast('Ad update ho gayi!');
+    }catch(e){
+      alert('Update nahi ho saka.\nWajah: ' + (e.message || JSON.stringify(e)));
+      console.error(e);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Save Karein';
+  });
+
+
   const sellModalOverlay = document.getElementById('sellModalOverlay');
   const imgPreview = document.getElementById('imgPreview');
   let selectedImages = [];
@@ -2267,16 +2477,47 @@
     const mine = row.sender_id === currentUser.id;
     const time = row.created_at ? new Date(row.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '';
     const bubble = document.createElement('div');
-    bubble.className = 'msg-bubble ' + (mine ? 'msg-mine' : 'msg-theirs');
+    bubble.className = 'msg-bubble-wrap ' + (mine ? 'mine' : 'theirs');
+    if(row.id !== undefined) bubble.dataset.msgid = row.id;
 
     let ticksHtml = '';
     if(mine){
       const otherOnline = activeChat && onlineUserIds.has(activeChat.otherId);
       ticksHtml = `<span class="msg-ticks ${otherOnline ? 'delivered' : ''}">${otherOnline ? '✓✓' : '✓'}</span>`;
     }
-    bubble.innerHTML = `${escapeHtml(row.message)}<div class="msg-meta"><span>${time}</span>${ticksHtml}</div>`;
+    const deleteBtnHtml = row.id !== undefined
+      ? `<button class="msg-delete-btn" title="Delete message">🗑️</button>`
+      : '';
+    bubble.innerHTML = `
+      ${deleteBtnHtml}
+      <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">
+        ${escapeHtml(row.message)}<div class="msg-meta"><span>${time}</span>${ticksHtml}</div>
+      </div>`;
+
+    const delBtn = bubble.querySelector('.msg-delete-btn');
+    if(delBtn){
+      delBtn.addEventListener('click', ()=> deleteChatMessage(row.id, bubble));
+    }
+
     chatBody.appendChild(bubble);
     chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  async function deleteChatMessage(msgId, bubbleEl){
+    if(!confirm('Ye message delete karna hai?')) return;
+    try{
+      const { error } = await sb.from('messages').delete().eq('id', msgId);
+      if(error) throw error;
+      bubbleEl.remove();
+      seenMessageIds.delete(msgId);
+      if(chatBody.children.length === 0){
+        chatBody.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;">Koi message nahi hai — sab se pehle aap likhein!</div>';
+        document.getElementById('quickReplies').style.display = 'flex';
+      }
+    }catch(e){
+      alert('Message delete nahi ho saka.\nWajah: ' + (e.message || JSON.stringify(e)));
+      console.error(e);
+    }
   }
 
   function escapeHtml(str){
