@@ -165,16 +165,44 @@
     border:1px solid var(--gold); font-weight:600;
   }
 
-  .chat-modal .modal{ display:flex; flex-direction:column; height:70vh; padding:0; }
+  .chat-modal .modal{ display:flex; flex-direction:column; height:75vh; padding:0; }
   .chat-header{
-    padding:18px 22px; border-bottom:1px solid var(--line);
-    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 18px; border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
   }
-  .chat-header h3{ font-size:17px; color:var(--gold-light); }
-  .chat-header .sub-line{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .chat-header-left{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .chat-avatar{
+    width:40px; height:40px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px;
+  }
+  .chat-header h3{ font-size:15.5px; color:var(--cream); line-height:1.2; }
+  .chat-status{ font-size:11px; color:var(--muted); margin-top:2px; }
+  .chat-status.online{ color:var(--teal); }
+  .chat-header-actions{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .chat-icon-btn{
+    width:34px; height:34px; border-radius:50%; background:var(--panel); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:15px; text-decoration:none; cursor:pointer;
+  }
+  .chat-icon-btn:hover{ border-color:var(--gold); }
+
+  .product-context-bar{
+    display:flex; align-items:center; gap:10px; padding:10px 18px;
+    background:var(--panel); border-bottom:1px solid var(--line);
+  }
+  .pcb-img{
+    width:38px; height:38px; border-radius:8px; overflow:hidden; flex-shrink:0;
+    background:var(--navy2); display:flex; align-items:center; justify-content:center; font-size:18px;
+  }
+  .pcb-img img{ width:100%; height:100%; object-fit:cover; }
+  .pcb-info{ min-width:0; }
+  .pcb-title{ font-size:12.5px; font-weight:600; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pcb-price{ font-size:12px; color:var(--gold-light); font-weight:700; }
+
   .chat-body{ flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
   .msg-bubble{
-    max-width:75%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.4;
+    max-width:75%; padding:10px 14px; border-radius:16px; font-size:13.5px; line-height:1.4;
+    box-shadow:0 3px 10px rgba(0,0,0,0.18);
   }
   .msg-mine{
     align-self:flex-end; background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
@@ -184,7 +212,20 @@
     align-self:flex-start; background:var(--panel); color:var(--cream); border:1px solid var(--line);
     border-bottom-left-radius:4px;
   }
-  .msg-time{ font-size:10px; opacity:0.65; margin-top:4px; }
+  .msg-meta{ font-size:10px; opacity:0.7; margin-top:4px; display:flex; align-items:center; gap:4px; justify-content:flex-end; }
+  .msg-theirs .msg-meta{ justify-content:flex-start; }
+  .msg-ticks{ font-size:11px; }
+  .msg-ticks.delivered{ opacity:1; }
+
+  .quick-replies{
+    display:flex; flex-direction:column; gap:8px; padding:12px 18px 0;
+  }
+  .quick-reply-btn{
+    text-align:left; background:var(--panel); border:1px solid var(--line); color:var(--cream);
+    padding:10px 14px; border-radius:12px; font-size:12.5px; cursor:pointer;
+  }
+  .quick-reply-btn:hover{ border-color:var(--gold); color:var(--gold-light); }
+
   .chat-input-row{
     display:flex; gap:10px; padding:14px 20px; border-top:1px solid var(--line);
   }
@@ -817,13 +858,32 @@
 <div class="modal-overlay chat-modal" id="chatModalOverlay">
   <div class="modal">
     <div class="chat-header">
-      <div>
-        <h3 id="chatWithName">Chat</h3>
-        <div class="sub-line" id="chatProductName"></div>
+      <div class="chat-header-left">
+        <div class="chat-avatar" id="chatAvatar">?</div>
+        <div>
+          <h3 id="chatWithName">Chat</h3>
+          <div class="chat-status" id="chatStatus">⚫ Offline</div>
+        </div>
       </div>
-      <button class="close-x" id="closeChatBtn" style="position:static;">✕</button>
+      <div class="chat-header-actions">
+        <a class="chat-icon-btn" id="chatCallBtn" href="#" style="display:none;" title="Call">📞</a>
+        <a class="chat-icon-btn" id="chatWaBtn" href="#" target="_blank" style="display:none;" title="WhatsApp">💬</a>
+        <button class="close-x" id="closeChatBtn" style="position:static;">✕</button>
+      </div>
+    </div>
+    <div class="product-context-bar" id="productContextBar">
+      <div class="pcb-img" id="pcbImg">📦</div>
+      <div class="pcb-info">
+        <div class="pcb-title" id="pcbTitle"></div>
+        <div class="pcb-price" id="pcbPrice"></div>
+      </div>
     </div>
     <div class="chat-body" id="chatBody"></div>
+    <div class="quick-replies" id="quickReplies" style="display:none;">
+      <button class="quick-reply-btn" data-msg="Is this item still available?">💬 Is this item still available?</button>
+      <button class="quick-reply-btn" data-msg="What is your final price?">💰 What is your final price?</button>
+      <button class="quick-reply-btn" data-msg="Where is the location for pickup?">📍 Where is the location for pickup?</button>
+    </div>
     <div class="chat-input-row">
       <input type="text" id="chatInput" placeholder="Message likhein...">
       <button class="chat-send-btn" id="chatSendBtn">Bhejein</button>
@@ -1181,7 +1241,8 @@
     grid.querySelectorAll('.msg-seller-btn').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
-        openChat(btn.dataset.msgid, btn.dataset.msgname, btn.dataset.msgpid, btn.dataset.msgpname);
+        const prod = products.find(x=>String(x.id) === String(btn.dataset.msgpid));
+        if(prod) openChat(btn.dataset.msgid, btn.dataset.msgname, prod);
       });
     });
 
@@ -1287,6 +1348,7 @@
         await sb.auth.signOut();
         currentUser = null;
         wishlistSet = new Set();
+        teardownPresence();
         renderAuthArea();
         renderProducts();
       });
@@ -1352,7 +1414,7 @@
           alert('Account ban gaya! Agar email confirmation mangi jaye to email check karein, warna seedha login kar lein.');
           setAuthMode('login');
         } else if(data.session){
-          currentUser = buildCurrentUser(data.user); loadWishlist();
+          currentUser = buildCurrentUser(data.user); loadWishlist(); setupPresence();
           renderAuthArea();
           renderProducts();
           closeAuth();
@@ -1360,7 +1422,7 @@
       } else {
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if(error) throw error;
-        currentUser = buildCurrentUser(data.user); loadWishlist();
+        currentUser = buildCurrentUser(data.user); loadWishlist(); setupPresence();
         renderAuthArea();
         renderProducts();
         closeAuth();
@@ -1391,7 +1453,7 @@
     const { data } = await sb.auth.getSession();
     if(data.session){
       currentUser = buildCurrentUser(data.session.user);
-      loadWishlist();
+      loadWishlist(); setupPresence();
     }
     renderAuthArea();
   }
@@ -1612,19 +1674,49 @@
     });
   }
 
-  document.getElementById('pImage').addEventListener('change', (e)=>{
-    const files = Array.from(e.target.files || []).slice(0, 6 - selectedImages.length);
-    let loaded = 0;
-    if(files.length === 0) return;
-    files.forEach(file=>{
+  function resizeImageFile(file, maxDim, quality){
+    return new Promise((resolve, reject)=>{
       const reader = new FileReader();
       reader.onload = (ev)=>{
-        selectedImages.push(ev.target.result);
-        loaded++;
-        if(loaded === files.length) renderImgPreview();
+        const img = new Image();
+        img.onload = ()=>{
+          let { width, height } = img;
+          if(width > maxDim || height > maxDim){
+            if(width > height){
+              height = Math.round(height * (maxDim / width));
+              width = maxDim;
+            } else {
+              width = Math.round(width * (maxDim / height));
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = ev.target.result;
       };
+      reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  document.getElementById('pImage').addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files || []).slice(0, 6 - selectedImages.length);
+    if(files.length === 0) return;
+    for(const file of files){
+      try{
+        // high-res cap (1600px) + high quality (0.92) keeps images sharp but not oversized
+        const resized = await resizeImageFile(file, 1600, 0.92);
+        selectedImages.push(resized);
+        renderImgPreview();
+      }catch(err){ console.warn('Image resize failed:', err); }
+    }
   });
 
   document.getElementById('submitSellBtn').addEventListener('click', async ()=>{
@@ -1741,7 +1833,7 @@
     document.getElementById('detailShareBtn').addEventListener('click', ()=> openShareModal(p));
     if(canMessage){
       document.getElementById('detailMsgBtn').addEventListener('click', ()=>{
-        openChat(p.seller_id, p.seller_name || 'Seller', p.id, p.name);
+        openChat(p.seller_id, p.seller_name || 'Seller', p);
       });
     }
 
@@ -1848,26 +1940,84 @@
   }
 
   // ---------- Chat System ----------
-  let activeChat = null; // { otherId, otherName, productId, productName }
+  let activeChat = null; // { otherId, otherName, productId, productName, product }
   let chatChannel = null;
   let seenMessageIds = new Set();
+  let onlineUserIds = new Set();
+  let presenceChannel = null;
 
   const chatModalOverlay = document.getElementById('chatModalOverlay');
   const inboxModalOverlay = document.getElementById('inboxModalOverlay');
   const chatBody = document.getElementById('chatBody');
+
+  // ---- Online presence (global, tracks all logged-in users currently on the site) ----
+  function setupPresence(){
+    if(!sb || !currentUser || !sharedWorking) return;
+    if(presenceChannel){ sb.removeChannel(presenceChannel); }
+    presenceChannel = sb.channel('dfs-online-users', { config: { presence: { key: currentUser.id } } });
+    presenceChannel.on('presence', { event: 'sync' }, ()=>{
+      const state = presenceChannel.presenceState();
+      onlineUserIds = new Set(Object.keys(state));
+      updateChatStatusIndicator();
+    });
+    presenceChannel.subscribe(async (status)=>{
+      if(status === 'SUBSCRIBED'){
+        await presenceChannel.track({ online_at: new Date().toISOString() });
+      }
+    });
+  }
+  function teardownPresence(){
+    if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel = null; }
+    onlineUserIds = new Set();
+  }
+
+  function updateChatStatusIndicator(){
+    if(!activeChat) return;
+    const statusEl = document.getElementById('chatStatus');
+    const isOnline = onlineUserIds.has(activeChat.otherId);
+    statusEl.textContent = isOnline ? '🟢 Online' : '⚫ Offline';
+    statusEl.className = 'chat-status' + (isOnline ? ' online' : '');
+  }
 
   function conversationFilterMatches(row, a, b, productId){
     return String(row.product_id) === String(productId) &&
       ((row.sender_id === a && row.receiver_id === b) || (row.sender_id === b && row.receiver_id === a));
   }
 
-  async function openChat(otherId, otherName, productId, productName){
+  async function openChat(otherId, otherName, product){
     if(!currentUser){ alert('Pehle Login karein.'); return; }
-    activeChat = { otherId, otherName, productId, productName };
+    const productId = product.id;
+    const productName = product.name;
+    activeChat = { otherId, otherName, productId, productName, product };
     seenMessageIds = new Set();
+
     document.getElementById('chatWithName').textContent = otherName;
-    document.getElementById('chatProductName').textContent = productName;
+    document.getElementById('chatAvatar').textContent = (otherName || '?').charAt(0).toUpperCase();
+    updateChatStatusIndicator();
+
+    // Product context bar
+    const pcbImg = document.getElementById('pcbImg');
+    pcbImg.innerHTML = product.image ? `<img src="${product.image}">` : (product.emoji || '📦');
+    document.getElementById('pcbTitle').textContent = product.name;
+    document.getElementById('pcbPrice').textContent = product.price ? `Rs ${Number(product.price).toLocaleString()}` : '';
+
+    // Call/WhatsApp header buttons — only meaningful when I'm the buyer messaging the seller
+    // (we only have a phone number tied to the product listing, i.e. the seller's number)
+    const callBtn = document.getElementById('chatCallBtn');
+    const waBtn = document.getElementById('chatWaBtn');
+    const iAmBuyer = product.seller_id === otherId;
+    if(iAmBuyer && product.phone){
+      callBtn.href = `tel:${product.phone.replace(/-/g,'')}`;
+      waBtn.href = `https://wa.me/${toWaNumber(product.phone)}`;
+      callBtn.style.display = 'flex';
+      waBtn.style.display = 'flex';
+    } else {
+      callBtn.style.display = 'none';
+      waBtn.style.display = 'none';
+    }
+
     chatBody.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;">Load ho raha hai...</div>';
+    document.getElementById('quickReplies').style.display = 'none';
     chatModalOverlay.classList.add('show');
     inboxModalOverlay.classList.remove('show');
 
@@ -1884,24 +2034,23 @@
     if(chatChannel){ sb.removeChannel(chatChannel); }
     chatChannel = sb.channel('chat-' + productId + '-' + otherId)
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, (payload)=>{
-        console.log('Realtime message received:', payload);
         const row = payload.new;
         if(activeChat && conversationFilterMatches(row, currentUser.id, activeChat.otherId, activeChat.productId)){
           appendChatMessage(row);
         }
       })
-      .subscribe((status)=>{
-        console.log('Chat channel status:', status);
-      });
+      .subscribe();
   }
 
   function renderChatMessages(msgs){
     if(msgs.length === 0){
       chatBody.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;">Koi message nahi hai — sab se pehle aap likhein!</div>';
+      document.getElementById('quickReplies').style.display = 'flex';
       return;
     }
+    document.getElementById('quickReplies').style.display = 'none';
     chatBody.innerHTML = '';
-    msgs.forEach(appendChatMessage);
+    msgs.forEach(row => appendChatMessage(row));
   }
 
   function appendChatMessage(row){
@@ -1909,14 +2058,22 @@
       if(seenMessageIds.has(row.id)) return;
       seenMessageIds.add(row.id);
     }
-    if(chatBody.children.length === 1 && chatBody.children[0].tagName === 'DIV' && chatBody.textContent.includes('pehle aap')){
+    if(chatBody.textContent.includes('pehle aap')){
       chatBody.innerHTML = '';
     }
+    document.getElementById('quickReplies').style.display = 'none';
+
     const mine = row.sender_id === currentUser.id;
     const time = row.created_at ? new Date(row.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '';
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble ' + (mine ? 'msg-mine' : 'msg-theirs');
-    bubble.innerHTML = `${escapeHtml(row.message)}<div class="msg-time">${time}</div>`;
+
+    let ticksHtml = '';
+    if(mine){
+      const otherOnline = activeChat && onlineUserIds.has(activeChat.otherId);
+      ticksHtml = `<span class="msg-ticks ${otherOnline ? 'delivered' : ''}">${otherOnline ? '✓✓' : '✓'}</span>`;
+    }
+    bubble.innerHTML = `${escapeHtml(row.message)}<div class="msg-meta"><span>${time}</span>${ticksHtml}</div>`;
     chatBody.appendChild(bubble);
     chatBody.scrollTop = chatBody.scrollHeight;
   }
@@ -1931,6 +2088,13 @@
     chatModalOverlay.classList.remove('show');
     if(chatChannel){ sb.removeChannel(chatChannel); chatChannel = null; }
     activeChat = null;
+  });
+
+  document.querySelectorAll('.quick-reply-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.getElementById('chatInput').value = btn.dataset.msg;
+      sendChatMessage();
+    });
   });
 
   async function sendChatMessage(){
@@ -2012,11 +2176,11 @@
       }
     });
 
-    const product = (id)=> products.find(p=>String(p.id)===String(id));
+    const productLookup = (id)=> products.find(p=>String(p.id)===String(id));
 
     list.innerHTML = '';
     convMap.forEach(conv=>{
-      const prod = product(conv.productId);
+      const prod = productLookup(conv.productId);
       const div = document.createElement('div');
       div.className = 'conv-item';
       const initial = (conv.otherName || '?').charAt(0).toUpperCase();
@@ -2028,7 +2192,8 @@
           <div class="conv-product">${prod ? prod.name : 'Product'}</div>
         </div>`;
       div.addEventListener('click', ()=>{
-        openChat(conv.otherId, conv.otherName, conv.productId, prod ? prod.name : 'Product');
+        const productForChat = prod || { id: conv.productId, name: 'Product', image: null, price: null, phone: null, seller_id: null, emoji: '📦' };
+        openChat(conv.otherId, conv.otherName, productForChat);
       });
       list.appendChild(div);
     });
