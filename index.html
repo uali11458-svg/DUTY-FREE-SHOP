@@ -283,6 +283,27 @@
   }
   .carousel-dots .dot.active{ background:var(--gold); }
   .detail-body{ padding:22px; max-height:40vh; overflow-y:auto; }
+
+  .report-link{
+    background:none; border:none; color:var(--pink); font-size:12.5px; font-weight:600;
+    cursor:pointer; margin-top:14px; padding:0; text-decoration:underline;
+  }
+  .report-reasons{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+  .report-reason-item{
+    display:flex; align-items:center; gap:10px; padding:11px 14px;
+    border:1px solid var(--line); border-radius:10px; cursor:pointer; font-size:13.5px;
+  }
+  .report-reason-item:has(input:checked){ border-color:var(--pink); background:rgba(230,57,113,0.08); }
+  .report-reason-item input{ accent-color:var(--pink); }
+
+  .toast-msg{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--navy2); color:var(--cream); border:1px solid var(--gold);
+    padding:14px 22px; border-radius:12px; font-size:13.5px; max-width:90vw; text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+    z-index:200; opacity:0; pointer-events:none; transition:all 0.3s ease;
+  }
+  .toast-msg.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   .detail-modal .close-x{ background:rgba(11,15,25,0.6); border-radius:50%; width:30px; height:30px; z-index:5; }
 
   .close-x{ background:none; border:none; }
@@ -840,9 +861,52 @@
       <div class="stats-line" id="detailStats" style="margin-bottom:10px;"></div>
       <p id="detailDesc" style="color:var(--muted); font-size:14px; line-height:1.6;"></p>
       <div class="contact-row" id="detailActions" style="margin-top:16px;"></div>
+      <button class="report-link" id="reportAdBtn">🚩 Report This Ad</button>
     </div>
   </div>
 </div>
+
+<!-- Report Modal -->
+<div class="modal-overlay" id="reportModalOverlay">
+  <div class="modal" style="max-width:400px;">
+    <button class="close-x" id="closeReportBtn">✕</button>
+    <h3>🚩 Report This Ad</h3>
+    <p class="sub">Ye ad kis wajah se report karna chahte hain?</p>
+
+    <div class="report-reasons" id="reportReasons">
+      <label class="report-reason-item">
+        <input type="radio" name="reportReason" value="Scam / Fraud">
+        <span>🚫 Scam / Fraud</span>
+      </label>
+      <label class="report-reason-item">
+        <input type="radio" name="reportReason" value="Inappropriate Content">
+        <span>🔞 Inappropriate Content</span>
+      </label>
+      <label class="report-reason-item">
+        <input type="radio" name="reportReason" value="Fake / Counterfeit Item">
+        <span>🏷️ Fake / Counterfeit Item</span>
+      </label>
+      <label class="report-reason-item">
+        <input type="radio" name="reportReason" value="Spam / Duplicate Ad">
+        <span>📩 Spam / Duplicate Ad</span>
+      </label>
+      <label class="report-reason-item">
+        <input type="radio" name="reportReason" value="Other">
+        <span>📝 Other</span>
+      </label>
+    </div>
+
+    <div class="field" id="reportOtherField" style="display:none; margin-top:10px;">
+      <textarea id="reportOtherText" rows="3" placeholder="Tafseel likhein..."></textarea>
+    </div>
+
+    <button class="btn-primary" id="submitReportBtn" style="width:100%; margin-top:18px;">Report Submit Karein</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toastMsg" class="toast-msg"></div>
+
 
 <!-- Share Modal -->
 <div class="modal-overlay" id="shareModalOverlay">
@@ -1830,6 +1894,7 @@
       ${canMessage ? `<button class="contact-btn msg-seller-btn" id="detailMsgBtn">💬 Message</button>` : ''}
     `;
     document.getElementById('detailShareBtn').addEventListener('click', ()=> openShareModal(p));
+    document.getElementById('reportAdBtn').addEventListener('click', ()=> openReportModal(p));
     if(canMessage){
       document.getElementById('detailMsgBtn').addEventListener('click', ()=>{
         openChat(p.seller_id, p.seller_name || 'Seller', p);
@@ -1926,6 +1991,77 @@
   }
   document.getElementById('closeShareBtn').addEventListener('click', ()=>{
     document.getElementById('shareModalOverlay').classList.remove('show');
+  });
+
+  // ---------- Toast ----------
+  function showToast(msg, duration=3500){
+    const toast = document.getElementById('toastMsg');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>{ toast.classList.remove('show'); }, duration);
+  }
+
+  // ---------- Report Ad ----------
+  let reportingProduct = null;
+  const reportModalOverlay = document.getElementById('reportModalOverlay');
+
+  function openReportModal(p){
+    if(!currentUser){
+      alert('Report karne ke liye pehle Login karein.');
+      openAuth();
+      return;
+    }
+    reportingProduct = p;
+    document.querySelectorAll('input[name="reportReason"]').forEach(r => r.checked = false);
+    document.getElementById('reportOtherField').style.display = 'none';
+    document.getElementById('reportOtherText').value = '';
+    reportModalOverlay.classList.add('show');
+  }
+  document.getElementById('closeReportBtn').addEventListener('click', ()=>{
+    reportModalOverlay.classList.remove('show');
+  });
+
+  document.querySelectorAll('input[name="reportReason"]').forEach(radio=>{
+    radio.addEventListener('change', ()=>{
+      document.getElementById('reportOtherField').style.display = radio.value === 'Other' ? 'block' : 'none';
+    });
+  });
+
+  document.getElementById('submitReportBtn').addEventListener('click', async ()=>{
+    if(!currentUser || !reportingProduct) return;
+    const selected = document.querySelector('input[name="reportReason"]:checked');
+    if(!selected){
+      alert('Barah-e-karam koi wajah select karein.');
+      return;
+    }
+    let reason = selected.value;
+    if(reason === 'Other'){
+      const otherText = document.getElementById('reportOtherText').value.trim();
+      reason = otherText ? `Other: ${otherText}` : 'Other';
+    }
+
+    const btn = document.getElementById('submitReportBtn');
+    btn.disabled = true;
+    btn.textContent = 'Bhej rahe hain...';
+
+    try{
+      const { error } = await sb.from('reports').insert([{
+        product_id: reportingProduct.id,
+        reporter_id: currentUser.id,
+        reason: reason
+      }]);
+      if(error) throw error;
+
+      reportModalOverlay.classList.remove('show');
+      showToast('Thank you for reporting. We will review this ad.');
+    }catch(e){
+      alert('Report submit nahi ho saka.\nWajah: ' + (e.message || JSON.stringify(e)));
+      console.error(e);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Report Submit Karein';
   });
 
   // Auto-open a product if shared link is opened (?product=ID)
