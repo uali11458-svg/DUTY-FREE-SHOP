@@ -237,6 +237,40 @@
   .share-opt:hover{ border-color:var(--gold); }
   .share-opt .icon{ font-size:20px; width:24px; text-align:center; }
 
+  /* ---------- My Account ---------- */
+  .account-tabs{ display:flex; gap:8px; margin:16px 0 4px; border-bottom:1px solid var(--line); }
+  .account-tab{
+    background:none; border:none; color:var(--muted); padding:10px 4px; font-weight:600; font-size:13.5px;
+    cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .account-tab.active{ color:var(--gold-light); border-bottom-color:var(--gold); }
+  .avatar-upload-wrap{ position:relative; display:inline-block; }
+  .avatar-preview{
+    width:84px; height:84px; border-radius:50%; overflow:hidden;
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:700;
+    border:2px solid var(--line);
+  }
+  .avatar-preview img{ width:100%; height:100%; object-fit:cover; }
+  .avatar-edit-btn{
+    position:absolute; bottom:0; right:0; background:var(--gold); color:var(--navy);
+    width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:13px; border:2px solid var(--navy2);
+  }
+  .wishlist-item{
+    display:flex; gap:12px; align-items:center; padding:10px; border:1px solid var(--line);
+    border-radius:12px; margin-bottom:10px; cursor:pointer;
+  }
+  .wishlist-item:hover{ border-color:var(--gold); }
+  .wishlist-item .wl-img{
+    width:56px; height:56px; border-radius:8px; overflow:hidden; flex-shrink:0;
+    background:var(--panel); display:flex; align-items:center; justify-content:center; font-size:26px;
+  }
+  .wishlist-item .wl-img img{ width:100%; height:100%; object-fit:cover; }
+  .wishlist-item .wl-info{ flex:1; }
+  .wishlist-item .wl-name{ font-size:13.5px; font-weight:600; }
+  .wishlist-item .wl-price{ font-size:13px; color:var(--gold-light); font-weight:700; }
+
   /* ---------- Hero with 3D floating showcase ---------- */
   .hero{
     max-width:1240px; margin:0 auto;
@@ -376,6 +410,16 @@
     border:none; color:white; font-size:11px;
     padding:4px 9px; border-radius:20px; cursor:pointer;
   }
+  .heart-btn{
+    position:absolute; top:8px; right:8px;
+    background:rgba(11,15,25,0.55);
+    border:none; width:32px; height:32px; border-radius:50%;
+    font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform 0.15s ease;
+  }
+  .heart-btn:hover{ transform:scale(1.15); }
+  .heart-btn.active{ background:rgba(230,57,113,0.25); }
   .card-body{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:5px; flex:1; }
   .card-body h4{ font-size:15px; font-weight:600; color:var(--cream); line-height:1.3; }
   .seller-line{ font-size:11.5px; color:var(--teal); font-weight:600; }
@@ -548,6 +592,58 @@
       <span id="authToggleText">Account nahi hai?</span>
       <a href="#" id="authToggleLink" style="color:var(--gold-light); text-decoration:underline;">Signup karein</a>
     </p>
+  </div>
+</div>
+
+<!-- My Account Modal -->
+<div class="modal-overlay" id="accountModalOverlay">
+  <div class="modal" style="max-width:460px;">
+    <button class="close-x" id="closeAccountBtn">✕</button>
+    <h3>Mera Account</h3>
+    <div class="account-tabs">
+      <button class="account-tab active" data-tab="profile">Profile</button>
+      <button class="account-tab" data-tab="wishlist">❤️ Wishlist</button>
+    </div>
+
+    <div id="profileTab">
+      <div style="text-align:center; margin:16px 0;">
+        <div class="avatar-upload-wrap">
+          <div class="avatar-preview" id="avatarPreview">?</div>
+          <label for="avatarInput" class="avatar-edit-btn">✏️</label>
+          <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="accName">Naam</label>
+        <input type="text" id="accName">
+        <div id="nameChangeNote" style="font-size:11.5px; color:var(--muted); margin-top:5px;"></div>
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="accEmail" disabled style="opacity:0.6;">
+      </div>
+
+      <button class="btn-primary" id="saveProfileBtn" style="width:100%;">Profile Save Karein</button>
+
+      <div style="border-top:1px solid var(--line); margin-top:22px; padding-top:18px;">
+        <h3 style="font-size:16px;">Password Tabdeel Karein</h3>
+        <div class="field" style="margin-top:12px;">
+          <label for="newPassword">Naya Password</label>
+          <input type="password" id="newPassword" placeholder="Kam az kam 6 harf">
+        </div>
+        <div class="field">
+          <label for="confirmPassword">Password Dobara Likhein</label>
+          <input type="password" id="confirmPassword">
+        </div>
+        <button class="btn-ghost" id="changePasswordBtn" style="width:100%;">Password Update Karein</button>
+      </div>
+    </div>
+
+    <div id="wishlistTab" style="display:none;">
+      <div id="wishlistItems" style="margin-top:14px;"></div>
+    </div>
   </div>
 </div>
 
@@ -783,6 +879,37 @@
     }catch(e){ console.warn('Stat update failed (non-critical):', e); }
   }
 
+  async function loadWishlist(){
+    if(!sb || !sharedWorking || !currentUser) return;
+    try{
+      const { data } = await sb.from('wishlists').select('product_id').eq('user_id', currentUser.id);
+      wishlistSet = new Set((data || []).map(r => String(r.product_id)));
+      renderProducts();
+    }catch(e){ console.warn('Wishlist load failed:', e); }
+  }
+
+  async function toggleWishlist(productId){
+    if(!currentUser){ alert('Wishlist ke liye pehle Login karein.'); openAuth(); return; }
+    const idStr = String(productId);
+    const isSaved = wishlistSet.has(idStr);
+
+    if(isSaved){
+      wishlistSet.delete(idStr);
+    } else {
+      wishlistSet.add(idStr);
+    }
+    renderProducts(); // instant UI feedback
+
+    if(!sb || !sharedWorking) return;
+    try{
+      if(isSaved){
+        await sb.from('wishlists').delete().eq('user_id', currentUser.id).eq('product_id', productId);
+      } else {
+        await sb.from('wishlists').insert([{ user_id: currentUser.id, product_id: productId }]);
+      }
+    }catch(e){ console.warn('Wishlist toggle failed:', e); }
+  }
+
   const catWrap = document.getElementById('catWrap');
   const grid = document.getElementById('productGrid');
   const shopTitle = document.getElementById('shopTitle');
@@ -837,12 +964,17 @@
       const msgBtn = canMessage
         ? `<button class="contact-btn msg-seller-btn" data-msgid="${p.seller_id}" data-msgname="${p.seller_name || 'Seller'}" data-msgpid="${p.id}" data-msgpname="${p.name}">💬 Message</button>`
         : '';
+      const isWishlisted = wishlistSet.has(String(p.id));
+      const heartBtn = !isOwner
+        ? `<button class="heart-btn ${isWishlisted ? 'active' : ''}" data-wishid="${p.id}">${isWishlisted ? '❤️' : '🤍'}</button>`
+        : '';
       return `
       <div class="card-holder">
         <div class="card" data-id="${p.id}">
           <div class="card-img">
             <span class="card-tag">${p.cat}</span>
             ${p.custom && isOwner ? `<button class="remove-tag" data-id="${String(p.id)}">Remove</button>` : ''}
+            ${heartBtn}
             ${imgHtml}
           </div>
           <div class="card-body">
@@ -861,6 +993,13 @@
         </div>
       </div>`;
     }).join('');
+
+    grid.querySelectorAll('.heart-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        toggleWishlist(btn.dataset.wishid);
+      });
+    });
 
     grid.querySelectorAll('.msg-seller-btn').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -917,7 +1056,8 @@
   });
 
   // ---------- Auth (Supabase) ----------
-  let currentUser = null; // {id, email, name}
+  let currentUser = null; // {id, email, name, avatar_url, last_name_change}
+  let wishlistSet = new Set(); // product ids currently wishlisted by currentUser
   const authArea = document.getElementById('authArea');
   const authModalOverlay = document.getElementById('authModalOverlay');
   let authMode = 'login'; // or 'signup'
@@ -927,15 +1067,21 @@
     if(currentUser){
       inboxBtn.style.display = 'inline-block';
       const initial = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
+      const avatarHtml = currentUser.avatar_url
+        ? `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+        : initial;
       authArea.innerHTML = `
         <div class="user-badge">
-          <div class="avatar">${initial}</div>
-          <span>${currentUser.name || currentUser.email}</span>
+          <div class="avatar" id="openAccountBtn" style="cursor:pointer; overflow:hidden;">${avatarHtml}</div>
+          <span id="openAccountBtn2" style="cursor:pointer;">${currentUser.name || currentUser.email}</span>
           <button class="logout-x" id="logoutBtn">Logout</button>
         </div>`;
+      document.getElementById('openAccountBtn').addEventListener('click', openAccountModal);
+      document.getElementById('openAccountBtn2').addEventListener('click', openAccountModal);
       document.getElementById('logoutBtn').addEventListener('click', async ()=>{
         await sb.auth.signOut();
         currentUser = null;
+        wishlistSet = new Set();
         renderAuthArea();
         renderProducts();
       });
@@ -1001,7 +1147,7 @@
           alert('Account ban gaya! Agar email confirmation mangi jaye to email check karein, warna seedha login kar lein.');
           setAuthMode('login');
         } else if(data.session){
-          currentUser = { id: data.user.id, email: data.user.email, name };
+          currentUser = buildCurrentUser(data.user); loadWishlist();
           renderAuthArea();
           renderProducts();
           closeAuth();
@@ -1009,11 +1155,7 @@
       } else {
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if(error) throw error;
-        currentUser = {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || data.user.email
-        };
+        currentUser = buildCurrentUser(data.user); loadWishlist();
         renderAuthArea();
         renderProducts();
         closeAuth();
@@ -1029,14 +1171,202 @@
     document.getElementById('authName').value = '';
   });
 
+  function buildCurrentUser(u){
+    return {
+      id: u.id,
+      email: u.email,
+      name: u.user_metadata?.full_name || u.email,
+      avatar_url: u.user_metadata?.avatar_url || null,
+      last_name_change: u.user_metadata?.last_name_change || null
+    };
+  }
+
   async function restoreSession(){
     if(!sb) return;
     const { data } = await sb.auth.getSession();
     if(data.session){
-      const u = data.session.user;
-      currentUser = { id: u.id, email: u.email, name: u.user_metadata?.full_name || u.email };
+      currentUser = buildCurrentUser(data.session.user);
+      loadWishlist();
     }
     renderAuthArea();
+  }
+
+  // ---------- My Account ----------
+  let pendingAvatarData = null;
+  const accountModalOverlay = document.getElementById('accountModalOverlay');
+
+  function openAccountModal(){
+    document.getElementById('accName').value = currentUser.name || '';
+    document.getElementById('accEmail').value = currentUser.email || '';
+    pendingAvatarData = null;
+    updateAvatarPreview();
+    updateNameChangeNote();
+    switchAccountTab('profile');
+    accountModalOverlay.classList.add('show');
+  }
+  document.getElementById('closeAccountBtn').addEventListener('click', ()=>{
+    accountModalOverlay.classList.remove('show');
+    pendingAvatarData = null;
+  });
+
+  function updateAvatarPreview(){
+    const el = document.getElementById('avatarPreview');
+    if(currentUser.avatar_url){
+      el.innerHTML = `<img src="${currentUser.avatar_url}">`;
+    } else {
+      el.textContent = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
+    }
+  }
+
+  function daysRemainingForNameChange(){
+    if(!currentUser.last_name_change) return 0;
+    const diffDays = (new Date() - new Date(currentUser.last_name_change)) / (1000*60*60*24);
+    const remaining = 15 - diffDays;
+    return remaining > 0 ? Math.ceil(remaining) : 0;
+  }
+
+  function updateNameChangeNote(){
+    const remaining = daysRemainingForNameChange();
+    const nameInput = document.getElementById('accName');
+    const note = document.getElementById('nameChangeNote');
+    if(remaining > 0){
+      nameInput.disabled = true;
+      note.textContent = `Naam dobara ${remaining} din baad tabdeel kar sakte hain.`;
+    } else {
+      nameInput.disabled = false;
+      note.textContent = 'Naam 15 din mein sirf ek dafa tabdeel ho sakta hai.';
+    }
+  }
+
+  document.querySelectorAll('.account-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=> switchAccountTab(tab.dataset.tab));
+  });
+  function switchAccountTab(which){
+    document.querySelectorAll('.account-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab === which));
+    document.getElementById('profileTab').style.display = which === 'profile' ? 'block' : 'none';
+    document.getElementById('wishlistTab').style.display = which === 'wishlist' ? 'block' : 'none';
+    if(which === 'wishlist') renderWishlistTab();
+  }
+
+  document.getElementById('avatarInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const size = 200;
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+        pendingAvatarData = canvas.toDataURL('image/jpeg', 0.85);
+        document.getElementById('avatarPreview').innerHTML = `<img src="${pendingAvatarData}">`;
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('saveProfileBtn').addEventListener('click', async ()=>{
+    const newName = document.getElementById('accName').value.trim();
+    const nameInputDisabled = document.getElementById('accName').disabled;
+    const nameChanged = !nameInputDisabled && newName && newName !== currentUser.name;
+
+    if(!newName){ alert('Naam khali nahi ho sakta.'); return; }
+
+    const updates = { full_name: newName };
+    if(pendingAvatarData) updates.avatar_url = pendingAvatarData;
+    if(nameChanged) updates.last_name_change = new Date().toISOString();
+
+    const btn = document.getElementById('saveProfileBtn');
+    btn.disabled = true; btn.textContent = 'Save ho raha hai...';
+
+    try{
+      const { error } = await sb.auth.updateUser({ data: updates });
+      if(error) throw error;
+
+      currentUser.name = newName;
+      if(pendingAvatarData) currentUser.avatar_url = pendingAvatarData;
+      if(nameChanged) currentUser.last_name_change = updates.last_name_change;
+
+      if(nameChanged && sharedWorking && sb){
+        await sb.from('products').update({ seller_name: newName }).eq('seller_id', currentUser.id);
+        products.forEach(p=>{ if(p.seller_id === currentUser.id) p.seller_name = newName; });
+      }
+
+      pendingAvatarData = null;
+      renderAuthArea();
+      renderProducts();
+      updateNameChangeNote();
+      alert('Profile update ho gayi!');
+    }catch(e){
+      alert('Error: ' + (e.message || 'Kuch ghalat ho gaya.'));
+    }
+
+    btn.disabled = false; btn.textContent = 'Profile Save Karein';
+  });
+
+  document.getElementById('changePasswordBtn').addEventListener('click', async ()=>{
+    const p1 = document.getElementById('newPassword').value;
+    const p2 = document.getElementById('confirmPassword').value;
+    if(!p1 || p1.length < 6){ alert('Password kam az kam 6 harf ka hona chahiye.'); return; }
+    if(p1 !== p2){ alert('Dono password match nahi karte.'); return; }
+
+    const btn = document.getElementById('changePasswordBtn');
+    btn.disabled = true; btn.textContent = 'Update ho raha hai...';
+    try{
+      const { error } = await sb.auth.updateUser({ password: p1 });
+      if(error) throw error;
+      alert('Password update ho gaya!');
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    }catch(e){
+      alert('Error: ' + (e.message || 'Kuch ghalat ho gaya.'));
+    }
+    btn.disabled = false; btn.textContent = 'Password Update Karein';
+  });
+
+  function renderWishlistTab(){
+    const container = document.getElementById('wishlistItems');
+    const items = products.filter(p => wishlistSet.has(String(p.id)));
+    if(items.length === 0){
+      container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0;">Abhi koi product wishlist mein nahi hai.</div>';
+      return;
+    }
+    container.innerHTML = items.map(p=>{
+      const imgInner = p.image ? `<img src="${p.image}">` : `<span>${p.emoji || '📦'}</span>`;
+      return `
+      <div class="wishlist-item" data-id="${p.id}">
+        <div class="wl-img">${imgInner}</div>
+        <div class="wl-info">
+          <div class="wl-name">${p.name}</div>
+          <div class="wl-price">Rs ${Number(p.price).toLocaleString()}</div>
+        </div>
+        <button class="heart-btn active" data-wishid="${p.id}" style="position:static;">❤️</button>
+      </div>`;
+    }).join('');
+
+    container.querySelectorAll('.wishlist-item').forEach(item=>{
+      item.addEventListener('click', (e)=>{
+        if(e.target.closest('.heart-btn')) return;
+        const p = products.find(x=>String(x.id)===item.dataset.id);
+        if(p){
+          accountModalOverlay.classList.remove('show');
+          openDetailModal(p);
+        }
+      });
+    });
+    container.querySelectorAll('.heart-btn').forEach(btn=>{
+      btn.addEventListener('click', async (e)=>{
+        e.stopPropagation();
+        await toggleWishlist(btn.dataset.wishid);
+        renderWishlistTab();
+      });
+    });
   }
 
   // ---------- Sell Modal ----------
