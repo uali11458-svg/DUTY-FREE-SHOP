@@ -311,6 +311,27 @@
   .star-pick.active{ color:var(--gold); }
 
   .rating-badge{ font-size:11.5px; color:var(--gold-light); font-weight:700; }
+  .verified-badge{
+    display:inline-flex; align-items:center; gap:3px;
+    font-size:11px; font-weight:700; color:var(--teal);
+    margin-left:4px;
+  }
+  .get-verified-banner{
+    background:linear-gradient(135deg, rgba(212,175,55,0.14), rgba(41,197,184,0.10));
+    border:1px solid var(--gold); border-radius:12px; padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  .get-verified-banner .gv-text{ font-size:12.5px; color:var(--cream); flex:1; min-width:160px; }
+  .get-verified-banner .gv-text b{ display:block; color:var(--gold-light); font-size:14px; margin-bottom:2px; }
+  .get-verified-btn{
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    border:none; padding:10px 16px; border-radius:9px; font-weight:700; font-size:12.5px;
+    cursor:pointer; white-space:nowrap; text-decoration:none; display:inline-block;
+  }
+  .already-verified-banner{
+    background:rgba(41,197,184,0.10); border:1px solid var(--teal); border-radius:12px;
+    padding:14px 16px; display:flex; align-items:center; gap:10px; font-size:13px; color:var(--teal); font-weight:700;
+  }
   .report-reason-item{
     display:flex; align-items:center; gap:10px; padding:11px 14px;
     border:1px solid var(--line); border-radius:10px; cursor:pointer; font-size:13.5px;
@@ -987,6 +1008,8 @@
         <input type="text" id="accEmail" disabled style="opacity:0.6;">
       </div>
 
+      <div id="verifiedBadgeSection" style="margin-bottom:16px;"></div>
+
       <button class="btn-primary" id="saveProfileBtn" style="width:100%;">Profile Save Karein</button>
 
       <div style="border-top:1px solid var(--line); margin-top:22px; padding-top:18px;">
@@ -1361,6 +1384,7 @@
   let sortOrder = 'newest';
   let products = [];
   let sellerRatingsMap = {}; // seller_id -> { avg, count }
+  let verifiedSellersSet = new Set(); // seller_ids that are manually approved/verified
 
   // ---------- Shared Storage (Supabase) ----------
   let sharedWorking = false;
@@ -1388,6 +1412,7 @@
 
       sharedWorking = true;
       await loadSellerRatings();
+      await loadVerifiedSellers();
       renderCategories();
       renderProducts();
       hideSplashScreen();
@@ -1441,6 +1466,15 @@
       });
       sellerRatingsMap = finalMap;
     }catch(e){ console.warn('Seller ratings load failed:', e); }
+  }
+
+  async function loadVerifiedSellers(){
+    if(!sb || !sharedWorking) return;
+    try{
+      const { data, error } = await sb.from('profiles').select('id').eq('is_verified', true);
+      if(error) throw error;
+      verifiedSellersSet = new Set((data || []).map(r => String(r.id)));
+    }catch(e){ console.warn('Verified sellers load failed (profiles table may not exist yet):', e); }
   }
 
   function showDemoModeNotice(reason){
@@ -1634,7 +1668,9 @@
       const ratingBadge = ratingInfo
         ? `<span class="rating-badge">⭐ ${ratingInfo.avg.toFixed(1)}</span>`
         : `<span class="rating-badge">⭐ New</span>`;
-      const sellerLine = p.seller_name ? `<div class="seller-line">👤 ${p.seller_name} · ${ratingBadge}</div>` : '';
+      const isVerifiedSeller = p.seller_id && verifiedSellersSet.has(String(p.seller_id));
+      const verifiedBadgeHtml = isVerifiedSeller ? `<span class="verified-badge" title="Verified Seller">🛡️</span>` : '';
+      const sellerLine = p.seller_name ? `<div class="seller-line">👤 ${p.seller_name}${verifiedBadgeHtml} · ${ratingBadge}</div>` : '';
       const statsLine = p.custom ? `<div class="stats-line">👁 ${p.views || 0} views · 💬 ${p.leads || 0} leads</div>` : '';
       const canMessage = currentUser && p.custom && p.seller_id && !isOwner;
       const msgBtn = canMessage
@@ -1914,8 +1950,25 @@
     pendingAvatarData = null;
     updateAvatarPreview();
     updateNameChangeNote();
+    renderVerifiedBadgeSection();
     switchAccountTab('profile');
     accountModalOverlay.classList.add('show');
+  }
+
+  function renderVerifiedBadgeSection(){
+    const section = document.getElementById('verifiedBadgeSection');
+    const isVerified = currentUser && verifiedSellersSet.has(String(currentUser.id));
+    if(isVerified){
+      section.innerHTML = `<div class="already-verified-banner">🛡️ Aap Verified Seller hain</div>`;
+    } else {
+      const waNum = toWaNumber(DEFAULT_PHONE);
+      const waMsg = encodeURIComponent(`Assalam o Alaikum, mein DFS - Duty Free Shop par apna seller account "${currentUser.name}" verify karwana chahta hoon. Barah-e-karam guide karein.`);
+      section.innerHTML = `
+        <div class="get-verified-banner">
+          <div class="gv-text"><b>🛡️ Get Verified Badge</b>Buyers ka trust jeetne ke liye apna account verify karwayein.</div>
+          <a class="get-verified-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">WhatsApp Par Contact Karein</a>
+        </div>`;
+    }
   }
   document.getElementById('closeAccountBtn').addEventListener('click', ()=>{
     accountModalOverlay.classList.remove('show');
@@ -2427,7 +2480,9 @@
     document.getElementById('detailName').textContent = p.name;
     const sellerRating = sellerRatingsMap[p.seller_id];
     const ratingText = p.seller_id ? (sellerRating ? ` · ⭐ ${sellerRating.avg.toFixed(1)} (${sellerRating.count})` : ' · ⭐ New') : '';
-    document.getElementById('detailSeller').innerHTML = p.seller_name ? `👤 ${p.seller_name}${ratingText}` : '';
+    const isVerifiedSellerDetail = p.seller_id && verifiedSellersSet.has(String(p.seller_id));
+    const verifiedBadgeDetail = isVerifiedSellerDetail ? `<span class="verified-badge" title="Verified Seller">🛡️ Verified</span>` : '';
+    document.getElementById('detailSeller').innerHTML = p.seller_name ? `👤 ${p.seller_name}${ratingText} ${verifiedBadgeDetail}` : '';
     const locEl = document.getElementById('detailLocation');
     if(p.city){
       locEl.textContent = `📍 ${p.city}, Pakistan`;
