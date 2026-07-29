@@ -792,6 +792,9 @@
     <button id="applyPriceBtn" class="apply-price-btn">Filter</button>
     <button id="clearPriceBtn" class="clear-price-btn" style="display:none;">✕</button>
   </div>
+  <select id="subcatFilterSelect" class="sort-select" style="display:none;">
+    <option value="All">Sab Sub-Categories</option>
+  </select>
   <select id="sortSelect" class="sort-select">
     <option value="newest">Sort: Newest</option>
     <option value="price_asc">Price: Low to High</option>
@@ -912,16 +915,23 @@
     </div>
 
     <div class="field">
-      <label for="editCat">Category</label>
+      <label for="editCat">Main Category</label>
       <select id="editCat">
-        <option>Fashion</option>
         <option>Electronics</option>
+        <option>Fashion</option>
         <option>Home</option>
+        <option>Vehicles</option>
         <option>Beauty</option>
+        <option value="Sports & Books">Sports & Books</option>
         <option>Grocery</option>
         <option>Handmade</option>
         <option>Other</option>
       </select>
+    </div>
+
+    <div class="field">
+      <label for="editSubcat">Sub-Category</label>
+      <select id="editSubcat"></select>
     </div>
 
     <div class="field">
@@ -1113,15 +1123,16 @@
     </div>
 
     <div class="field">
-      <label for="pCat">Category</label>
+      <label for="pCat">Main Category</label>
       <select id="pCat">
-        <option>Fashion</option>
-        <option>Electronics</option>
-        <option>Home</option>
-        <option>Beauty</option>
-        <option>Grocery</option>
-        <option>Handmade</option>
-        <option>Other</option>
+        <option value="">-- Category Chunein --</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="pSubcat">Sub-Category</label>
+      <select id="pSubcat" disabled>
+        <option value="">-- Pehle Main Category Chunein --</option>
       </select>
     </div>
 
@@ -1194,8 +1205,20 @@
     {id:8, name:"Power Bank 20000mAh", cat:"Electronics", price:2999, desc:"Fast charging, do devices ek sath charge karein.", emoji:"🔋", phone:DEFAULT_PHONE, image:null, custom:false},
   ];
 
-  const categories = ["All", "Fashion", "Electronics", "Home", "Beauty", "Grocery", "Handmade", "Other"];
+  const categoryStructure = {
+    "Electronics": ["Mobiles", "Mobile Accessories", "Laptops", "Audio", "Wearables", "Cameras", "TVs", "Other Electronics"],
+    "Fashion": ["Men's Clothing", "Women's Clothing", "Kids' Clothing", "Shoes", "Bags & Accessories", "Jewelry & Watches"],
+    "Home": ["Furniture", "Kitchen & Dining", "Home Decor", "Bedding & Bath", "Appliances"],
+    "Vehicles": ["Cars", "Motorcycles", "Auto Parts & Accessories", "Bicycles"],
+    "Beauty": ["Skincare", "Makeup", "Haircare", "Fragrances", "Personal Care"],
+    "Sports & Books": ["Sports Equipment", "Fitness", "Books", "Outdoor & Camping"],
+    "Grocery": ["Grocery Items"],
+    "Handmade": ["Handmade Items"],
+    "Other": ["Other"]
+  };
+  const categories = ["All", ...Object.keys(categoryStructure)];
   let activeCat = "All";
+  let activeSubcat = "All";
   let searchTerm = "";
   let minPriceFilter = null;
   let cityFilter = 'All';
@@ -1298,7 +1321,7 @@
   async function addProductToDb(p, isNew=true){
     if(sharedWorking && sb){
       await sb.from('products').insert([{
-        name:p.name, cat:p.cat, condition:p.condition || null, city:p.city || null, price:p.price, desc:p.desc,
+        name:p.name, cat:p.cat, subcat:p.subcat || null, condition:p.condition || null, city:p.city || null, price:p.price, desc:p.desc,
         phone:p.phone, image:p.image, images:p.images || null, custom:p.custom !== undefined ? p.custom : true,
         seller_id: p.seller_id || null, seller_name: p.seller_name || null
       }]);
@@ -1390,11 +1413,31 @@
     catWrap.querySelectorAll('.chip').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         activeCat = btn.dataset.cat;
+        activeSubcat = 'All';
+        updateSubcatFilterDropdown();
         renderCategories();
         renderProducts();
       });
     });
   }
+
+  function updateSubcatFilterDropdown(){
+    const subSelect = document.getElementById('subcatFilterSelect');
+    const subs = categoryStructure[activeCat];
+    if(!subs){
+      subSelect.style.display = 'none';
+      subSelect.innerHTML = '<option value="All">Sab Sub-Categories</option>';
+      return;
+    }
+    subSelect.style.display = 'inline-block';
+    subSelect.innerHTML = '<option value="All">Sab Sub-Categories</option>' +
+      subs.map(sc => `<option value="${sc}">${sc}</option>`).join('');
+    subSelect.value = 'All';
+  }
+  document.getElementById('subcatFilterSelect').addEventListener('change', (e)=>{
+    activeSubcat = e.target.value;
+    renderProducts();
+  });
 
   function toWaNumber(phone){
     let digits = phone.replace(/[^0-9]/g, '');
@@ -1404,6 +1447,10 @@
 
   function renderProducts(){
     let filtered = activeCat==="All" ? products : products.filter(p=>p.cat===activeCat);
+
+    if(activeCat !== 'All' && activeSubcat !== 'All'){
+      filtered = filtered.filter(p => p.subcat === activeSubcat);
+    }
 
     if(cityFilter !== 'All'){
       filtered = filtered.filter(p => p.city === cityFilter);
@@ -1954,10 +2001,23 @@
   let editingProductId = null;
   const editModalOverlay = document.getElementById('editModalOverlay');
 
+  function populateEditSubcat(mainCat, selectedSubcat){
+    const subSelect = document.getElementById('editSubcat');
+    const list = categoryStructure[mainCat] || [];
+    subSelect.innerHTML = list.map(sc => `<option value="${sc}">${sc}</option>`).join('');
+    if(selectedSubcat && list.includes(selectedSubcat)){
+      subSelect.value = selectedSubcat;
+    }
+  }
+  document.getElementById('editCat').addEventListener('change', (e)=>{
+    populateEditSubcat(e.target.value, null);
+  });
+
   function openEditModal(p){
     editingProductId = p.id;
     document.getElementById('editName').value = p.name || '';
     document.getElementById('editCat').value = p.cat || 'Fashion';
+    populateEditSubcat(document.getElementById('editCat').value, p.subcat);
     document.getElementById('editCity').value = p.city || 'Karachi';
     document.getElementById('editPrice').value = p.price || '';
     document.getElementById('editDesc').value = p.desc || '';
@@ -1976,6 +2036,7 @@
     if(!editingProductId || !currentUser) return;
     const name = document.getElementById('editName').value.trim();
     const cat = document.getElementById('editCat').value;
+    const subcat = document.getElementById('editSubcat').value;
     const city = document.getElementById('editCity').value;
     const price = document.getElementById('editPrice').value.trim();
     const desc = document.getElementById('editDesc').value.trim();
@@ -1989,7 +2050,7 @@
     btn.disabled = true;
     btn.textContent = 'Save ho raha hai...';
 
-    const updates = { name, cat, city, price: Number(price), desc };
+    const updates = { name, cat, subcat, city, price: Number(price), desc };
 
     try{
       if(sharedWorking && sb){
@@ -2084,6 +2145,32 @@
     });
   }
 
+  // ---------- Category / Sub-Category setup for Sell Form ----------
+  function populateCategoryDropdowns(){
+    const catSelect = document.getElementById('pCat');
+    Object.keys(categoryStructure).forEach(mainCat=>{
+      const opt = document.createElement('option');
+      opt.value = mainCat;
+      opt.textContent = mainCat;
+      catSelect.appendChild(opt);
+    });
+  }
+  populateCategoryDropdowns();
+
+  document.getElementById('pCat').addEventListener('change', (e)=>{
+    const subSelect = document.getElementById('pSubcat');
+    const mainCat = e.target.value;
+    subSelect.innerHTML = '';
+    if(!mainCat || !categoryStructure[mainCat]){
+      subSelect.disabled = true;
+      subSelect.innerHTML = '<option value="">-- Pehle Main Category Chunein --</option>';
+      return;
+    }
+    subSelect.disabled = false;
+    subSelect.innerHTML = '<option value="">-- Sub-Category Chunein --</option>' +
+      categoryStructure[mainCat].map(sc => `<option value="${sc}">${sc}</option>`).join('');
+  });
+
   document.getElementById('pImage').addEventListener('change', async (e)=>{
     const files = Array.from(e.target.files || []).slice(0, 6 - selectedImages.length);
     if(files.length === 0) return;
@@ -2104,6 +2191,7 @@
     }
     const name = document.getElementById('pName').value.trim();
     const cat = document.getElementById('pCat').value;
+    const subcat = document.getElementById('pSubcat').value;
     const condition = document.getElementById('pCondition').value;
     const city = document.getElementById('pCity').value;
     const price = document.getElementById('pPrice').value.trim();
@@ -2114,13 +2202,17 @@
       alert('Barah-e-karam kam az kam naam aur price to darj karein.');
       return;
     }
+    if(!cat){
+      alert('Barah-e-karam Main Category select karein.');
+      return;
+    }
 
     const submitBtn = document.getElementById('submitSellBtn');
     submitBtn.disabled = true;
     submitBtn.textContent = "Add ho raha hai...";
 
     const newProduct = {
-      name, cat, condition, city, price: Number(price), desc,
+      name, cat, subcat, condition, city, price: Number(price), desc,
       emoji: "🛍️",
       phone,
       image: selectedImages[0] || null,
@@ -2146,6 +2238,9 @@
     document.getElementById('pDesc').value = '';
     document.getElementById('pPhone').value = DEFAULT_PHONE;
     document.getElementById('pImage').value = '';
+    document.getElementById('pCat').value = '';
+    document.getElementById('pSubcat').innerHTML = '<option value="">-- Pehle Main Category Chunein --</option>';
+    document.getElementById('pSubcat').disabled = true;
     selectedImages = [];
     renderImgPreview();
 
@@ -2177,7 +2272,7 @@
     carouselIndex = 0;
     renderCarousel(p.emoji);
 
-    document.getElementById('detailCat').textContent = p.cat;
+    document.getElementById('detailCat').textContent = p.subcat ? `${p.cat} · ${p.subcat}` : p.cat;
     const condEl = document.getElementById('detailCondition');
     if(p.condition){
       condEl.textContent = p.condition;
