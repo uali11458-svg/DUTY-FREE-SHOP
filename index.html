@@ -304,6 +304,13 @@
     cursor:pointer; margin-top:14px; padding:0; text-decoration:underline;
   }
   .report-reasons{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+
+  .star-picker{ margin-top:20px; display:flex; justify-content:center; gap:8px; }
+  .star-pick{ font-size:38px; color:var(--muted); cursor:pointer; transition:color 0.15s ease, transform 0.15s ease; }
+  .star-pick:hover{ transform:scale(1.1); }
+  .star-pick.active{ color:var(--gold); }
+
+  .rating-badge{ font-size:11.5px; color:var(--gold-light); font-weight:700; }
   .report-reason-item{
     display:flex; align-items:center; gap:10px; padding:11px 14px;
     border:1px solid var(--line); border-radius:10px; cursor:pointer; font-size:13.5px;
@@ -1025,6 +1032,23 @@
   </div>
 </div>
 
+<!-- Rating Modal -->
+<div class="modal-overlay" id="ratingModalOverlay">
+  <div class="modal" style="max-width:360px; text-align:center;">
+    <button class="close-x" id="closeRatingBtn">✕</button>
+    <h3>⭐ Seller Ko Rate Karein</h3>
+    <p class="sub" id="ratingSellerName"></p>
+    <div class="star-picker" id="starPicker">
+      <span class="star-pick" data-val="1">☆</span>
+      <span class="star-pick" data-val="2">☆</span>
+      <span class="star-pick" data-val="3">☆</span>
+      <span class="star-pick" data-val="4">☆</span>
+      <span class="star-pick" data-val="5">☆</span>
+    </div>
+    <button class="btn-primary" id="submitRatingBtn" style="width:100%; margin-top:20px;">Rating Submit Karein</button>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toastMsg" class="toast-msg"></div>
 
@@ -1178,6 +1202,7 @@
   let maxPriceFilter = null;
   let sortOrder = 'newest';
   let products = [];
+  let sellerRatingsMap = {}; // seller_id -> { avg, count }
 
   // ---------- Shared Storage (Supabase) ----------
   let sharedWorking = false;
@@ -1204,6 +1229,7 @@
       }
 
       sharedWorking = true;
+      await loadSellerRatings();
       renderCategories();
       renderProducts();
       hideSplashScreen();
@@ -1238,6 +1264,25 @@
     if(!splash) return;
     splash.classList.add('fade-out');
     setTimeout(()=>{ splash.style.display = 'none'; }, 550);
+  }
+
+  async function loadSellerRatings(){
+    if(!sb || !sharedWorking) return;
+    try{
+      const { data, error } = await sb.from('seller_ratings').select('seller_id, rating_value');
+      if(error) throw error;
+      const map = {};
+      (data || []).forEach(row=>{
+        if(!map[row.seller_id]) map[row.seller_id] = { total: 0, count: 0 };
+        map[row.seller_id].total += row.rating_value;
+        map[row.seller_id].count += 1;
+      });
+      const finalMap = {};
+      Object.keys(map).forEach(sid=>{
+        finalMap[sid] = { avg: map[sid].total / map[sid].count, count: map[sid].count };
+      });
+      sellerRatingsMap = finalMap;
+    }catch(e){ console.warn('Seller ratings load failed:', e); }
   }
 
   function showDemoModeNotice(reason){
@@ -1403,7 +1448,11 @@
         ? `<img src="${p.image}" alt="${p.name}">`
         : `<span>${p.emoji || '📦'}</span>`;
       const isOwner = currentUser && p.seller_id === currentUser.id;
-      const sellerLine = p.seller_name ? `<div class="seller-line">👤 ${p.seller_name}</div>` : '';
+      const ratingInfo = sellerRatingsMap[p.seller_id];
+      const ratingBadge = ratingInfo
+        ? `<span class="rating-badge">⭐ ${ratingInfo.avg.toFixed(1)}</span>`
+        : `<span class="rating-badge">⭐ New</span>`;
+      const sellerLine = p.seller_name ? `<div class="seller-line">👤 ${p.seller_name} · ${ratingBadge}</div>` : '';
       const statsLine = p.custom ? `<div class="stats-line">👁 ${p.views || 0} views · 💬 ${p.leads || 0} leads</div>` : '';
       const canMessage = currentUser && p.custom && p.seller_id && !isOwner;
       const msgBtn = canMessage
@@ -2138,7 +2187,9 @@
       condEl.style.display = 'none';
     }
     document.getElementById('detailName').textContent = p.name;
-    document.getElementById('detailSeller').textContent = p.seller_name ? `👤 ${p.seller_name}` : '';
+    const sellerRating = sellerRatingsMap[p.seller_id];
+    const ratingText = p.seller_id ? (sellerRating ? ` · ⭐ ${sellerRating.avg.toFixed(1)} (${sellerRating.count})` : ' · ⭐ New') : '';
+    document.getElementById('detailSeller').innerHTML = p.seller_name ? `👤 ${p.seller_name}${ratingText}` : '';
     const locEl = document.getElementById('detailLocation');
     if(p.city){
       locEl.textContent = `📍 ${p.city}, Pakistan`;
@@ -2166,9 +2217,14 @@
       <a class="contact-btn wa-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</a>
       <button class="contact-btn share-btn" id="detailShareBtn">🔗 Share</button>
       ${canMessage ? `<button class="contact-btn msg-seller-btn" id="detailMsgBtn">💬 Message</button>` : ''}
+      ${canMessage ? `<button class="contact-btn" id="rateSellerBtn">⭐ Rate Seller</button>` : ''}
     `;
     document.getElementById('detailShareBtn').addEventListener('click', ()=> openShareModal(p));
     document.getElementById('reportAdBtn').addEventListener('click', ()=> openReportModal(p));
+    if(canMessage){
+      const rateBtn = document.getElementById('rateSellerBtn');
+      if(rateBtn) rateBtn.addEventListener('click', ()=> openRatingModal(p));
+    }
     if(canMessage){
       document.getElementById('detailMsgBtn').addEventListener('click', ()=>{
         openChat(p.seller_id, p.seller_name || 'Seller', p);
@@ -2337,6 +2393,70 @@
     btn.disabled = false;
     btn.textContent = 'Report Submit Karein';
   });
+
+  // ---------- Seller Rating ----------
+  let ratingTargetProduct = null;
+  let selectedRatingValue = 0;
+  const ratingModalOverlay = document.getElementById('ratingModalOverlay');
+
+  function openRatingModal(p){
+    if(!currentUser){ alert('Rate karne ke liye pehle Login karein.'); openAuth(); return; }
+    ratingTargetProduct = p;
+    selectedRatingValue = 0;
+    document.getElementById('ratingSellerName').textContent = p.seller_name || 'Seller';
+    updateStarPicker();
+    ratingModalOverlay.classList.add('show');
+  }
+  document.getElementById('closeRatingBtn').addEventListener('click', ()=>{
+    ratingModalOverlay.classList.remove('show');
+  });
+
+  function updateStarPicker(){
+    document.querySelectorAll('.star-pick').forEach(star=>{
+      const val = parseInt(star.dataset.val);
+      const active = val <= selectedRatingValue;
+      star.textContent = active ? '★' : '☆';
+      star.classList.toggle('active', active);
+    });
+  }
+  document.querySelectorAll('.star-pick').forEach(star=>{
+    star.addEventListener('click', ()=>{
+      selectedRatingValue = parseInt(star.dataset.val);
+      updateStarPicker();
+    });
+  });
+
+  document.getElementById('submitRatingBtn').addEventListener('click', async ()=>{
+    if(!currentUser || !ratingTargetProduct || !ratingTargetProduct.seller_id) return;
+    if(selectedRatingValue < 1){
+      alert('Barah-e-karam sitare (stars) select karein.');
+      return;
+    }
+    const btn = document.getElementById('submitRatingBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submit ho raha hai...';
+
+    try{
+      const { error } = await sb.from('seller_ratings').upsert([{
+        seller_id: ratingTargetProduct.seller_id,
+        buyer_id: currentUser.id,
+        rating_value: selectedRatingValue
+      }], { onConflict: 'seller_id,buyer_id' });
+      if(error) throw error;
+
+      await loadSellerRatings();
+      renderProducts();
+      ratingModalOverlay.classList.remove('show');
+      showToast('Rating submit ho gayi, shukriya!');
+    }catch(e){
+      alert('Rating submit nahi ho saki.\nWajah: ' + (e.message || JSON.stringify(e)));
+      console.error(e);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Rating Submit Karein';
+  });
+
 
   // Auto-open a product if shared link is opened (?product=ID)
   function checkSharedProductLink(){
