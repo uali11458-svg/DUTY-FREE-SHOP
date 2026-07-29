@@ -705,6 +705,112 @@
   @media (prefers-reduced-motion: reduce){
     .splash-loader{ animation:none; }
   }
+  /* ================= MOBILE OPTIMIZATION (max-width: 768px) ================= */
+  /* Desktop layout above this line is untouched. */
+  @media (max-width: 768px){
+
+    /* ---- Compact Header ---- */
+    .nav-wrap{
+      padding:10px 14px;
+      gap:8px;
+    }
+    .logo{ font-size:20px; }
+    .logo small{ font-size:8px; letter-spacing:2px; }
+
+    .search-box{
+      order:1;
+      flex:1 1 100%;
+      margin-top:0;
+    }
+    .search-box input{ padding:9px 34px 9px 36px; font-size:13px; }
+    .search-icon{ left:12px; font-size:13px; }
+
+    /* Hide/compact non-essential header items on mobile — moved to bottom nav or hidden */
+    .city-filter-select{ display:none; }
+    .chats-btn{ display:none !important; }
+    .sell-btn{ display:none; }
+    .theme-toggle-btn{ width:34px; height:34px; font-size:14px; }
+    .user-badge span{ display:none; } /* keep avatar only, hide name text */
+    .user-badge{ padding:5px; gap:0; }
+    .user-badge .logout-x{ display:none; } /* logout moved inside account modal flow via avatar tap */
+    .login-btn{ padding:8px 12px; font-size:12px; }
+
+    /* ---- Hero: smaller & sleek ---- */
+    .hero{
+      padding:20px 16px 24px;
+      grid-template-columns:1fr;
+      gap:16px;
+    }
+    .hero h1{ font-size:26px; line-height:1.15; }
+    .hero p{ font-size:13.5px; margin-top:10px; }
+    .hero-tags{ margin-top:14px; gap:6px; }
+    .hero-tag{ font-size:11px; padding:5px 10px; }
+    .scene{ height:150px; }
+    .showcase{ width:130px; height:130px; }
+    .showcase .icon{ font-size:44px; }
+
+    /* ---- Category chips & filter bar ---- */
+    .cat-wrap{ padding:6px 14px 14px; gap:8px; }
+    .chip{ padding:7px 14px; font-size:12.5px; }
+    .filter-bar{ padding:0 14px 14px; gap:8px; }
+    .price-range-group input{ width:78px; font-size:12px; padding:8px 10px; }
+    .sort-select{ font-size:12px; padding:8px 12px; }
+
+    /* ---- Product grid: clean 2-column ---- */
+    .shop{ padding:6px 12px 90px; } /* extra bottom padding so bottom nav never covers content */
+    .shop h2{ font-size:19px; margin-bottom:14px; }
+    .grid{
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .card-img{ height:120px; }
+    .card-body{ padding:10px 10px 12px; gap:4px; }
+    .card-body h4{ font-size:12.5px; }
+    .card-price{ font-size:16px; }
+    .seller-line{ font-size:10px; }
+    .stats-line{ font-size:9.5px; }
+    .contact-row{ gap:6px; }
+    .contact-btn{ padding:8px 4px; font-size:10.5px; }
+    .heart-btn{ width:26px; height:26px; font-size:13px; }
+    .card-tag{ font-size:9px; padding:3px 8px; }
+    .condition-tag{ font-size:8.5px; padding:3px 8px; }
+
+    /* ---- Modals: near-full-screen on mobile for comfort ---- */
+    .modal{ padding:20px; max-width:94vw !important; }
+    .detail-modal .modal{ max-height:88vh; }
+    .chat-modal .modal{ height:85vh; }
+
+    /* ---- Splash text slightly smaller ---- */
+    .splash-text{ font-size:40px; }
+
+    /* ---- Bottom Nav ---- */
+    body{ padding-bottom:64px; } /* room for fixed bottom nav */
+  }
+
+  /* Bottom nav itself is hidden on desktop by default, shown only under the mobile query above via display rule here */
+  .mobile-bottom-nav{ display:none; }
+  @media (max-width: 768px){
+    .mobile-bottom-nav{
+      display:flex;
+      position:fixed; bottom:0; left:0; right:0; z-index:150;
+      background:var(--navy2); border-top:1px solid var(--line);
+      padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+      justify-content:space-around;
+      box-shadow:0 -4px 16px rgba(0,0,0,0.25);
+    }
+    .mnav-item{
+      background:none; border:none; color:var(--muted);
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+      font-size:10px; font-weight:600; cursor:pointer; flex:1;
+    }
+    .mnav-icon{ font-size:19px; }
+    .mnav-item.active{ color:var(--gold-light); }
+    .mnav-sell .mnav-icon{
+      background:linear-gradient(135deg, var(--gold), var(--gold-light));
+      color:var(--navy); width:34px; height:34px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; margin-bottom:2px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1061,6 +1167,26 @@
 
 <!-- Toast -->
 <div id="toastMsg" class="toast-msg"></div>
+
+<!-- Mobile Bottom Nav (visible only on mobile via CSS) -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <button class="mnav-item active" id="mnavHome">
+    <span class="mnav-icon">🏠</span><span>Home</span>
+  </button>
+  <button class="mnav-item" id="mnavSearch">
+    <span class="mnav-icon">🔍</span><span>Search</span>
+  </button>
+  <button class="mnav-item mnav-sell" id="mnavSell">
+    <span class="mnav-icon">➕</span><span>Bechein</span>
+  </button>
+  <button class="mnav-item" id="mnavChat">
+    <span class="mnav-icon">💬</span><span>Chat</span>
+  </button>
+  <button class="mnav-item" id="mnavAccount">
+    <span class="mnav-icon">👤</span><span>Account</span>
+  </button>
+</nav>
+
 
 
 <!-- Share Modal -->
@@ -2855,6 +2981,39 @@
       list.appendChild(div);
     });
   }
+
+  // ---------- Mobile Bottom Nav ----------
+  function setMobileNavActive(id){
+    document.querySelectorAll('.mnav-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(id);
+    if(el) el.classList.add('active');
+  }
+  document.getElementById('mnavHome').addEventListener('click', ()=>{
+    setMobileNavActive('mnavHome');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  document.getElementById('mnavSearch').addEventListener('click', ()=>{
+    setMobileNavActive('mnavSearch');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(()=> document.getElementById('searchInput').focus(), 350);
+  });
+  document.getElementById('mnavSell').addEventListener('click', ()=>{
+    setMobileNavActive('mnavSell');
+    document.getElementById('openSellBtn').click();
+  });
+  document.getElementById('mnavChat').addEventListener('click', ()=>{
+    setMobileNavActive('mnavChat');
+    if(!currentUser){
+      alert('Chat dekhne ke liye pehle Login karein.');
+      openAuth();
+      return;
+    }
+    document.getElementById('openInboxBtn').click();
+  });
+  document.getElementById('mnavAccount').addEventListener('click', ()=>{
+    setMobileNavActive('mnavAccount');
+    if(currentUser){ openAccountModal(); } else { openAuth(); }
+  });
 
   window.addEventListener('load', initStorage);
   setTimeout(hideSplashScreen, 6000); // safety fallback
