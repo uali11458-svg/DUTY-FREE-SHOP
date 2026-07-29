@@ -2485,7 +2485,7 @@
       const otherOnline = activeChat && onlineUserIds.has(activeChat.otherId);
       ticksHtml = `<span class="msg-ticks ${otherOnline ? 'delivered' : ''}">${otherOnline ? '✓✓' : '✓'}</span>`;
     }
-    const deleteBtnHtml = row.id !== undefined
+    const deleteBtnHtml = (row.id !== undefined && mine)
       ? `<button class="msg-delete-btn" title="Delete message">🗑️</button>`
       : '';
     bubble.innerHTML = `
