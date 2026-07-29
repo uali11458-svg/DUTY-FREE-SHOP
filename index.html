@@ -362,6 +362,11 @@
     width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     cursor:pointer; font-size:13px; border:2px solid var(--navy2);
   }
+  .account-logout-btn{
+    width:100%; background:rgba(230,57,113,0.12); border:1.5px solid var(--pink); color:var(--pink);
+    padding:13px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer;
+  }
+  .account-logout-btn:hover{ background:rgba(230,57,113,0.22); }
   .wishlist-item{
     display:flex; gap:12px; align-items:center; padding:10px; border:1px solid var(--line);
     border-radius:12px; margin-bottom:10px; cursor:pointer;
@@ -995,6 +1000,10 @@
           <input type="password" id="confirmPassword">
         </div>
         <button class="btn-ghost" id="changePasswordBtn" style="width:100%;">Password Update Karein</button>
+      </div>
+
+      <div style="border-top:1px solid var(--line); margin-top:22px; padding-top:18px;">
+        <button class="account-logout-btn" id="accountLogoutBtn">🚪 Logout / Sign Out</button>
       </div>
     </div>
 
@@ -1762,6 +1771,16 @@
   const authModalOverlay = document.getElementById('authModalOverlay');
   let authMode = 'login'; // or 'signup'
 
+  async function performLogout(){
+    await sb.auth.signOut();
+    currentUser = null;
+    wishlistSet = new Set();
+    teardownPresence();
+    accountModalOverlay.classList.remove('show');
+    renderAuthArea();
+    renderProducts();
+  }
+
   function renderAuthArea(){
     const inboxBtn = document.getElementById('openInboxBtn');
     if(currentUser){
@@ -1778,14 +1797,7 @@
         </div>`;
       document.getElementById('openAccountBtn').addEventListener('click', openAccountModal);
       document.getElementById('openAccountBtn2').addEventListener('click', openAccountModal);
-      document.getElementById('logoutBtn').addEventListener('click', async ()=>{
-        await sb.auth.signOut();
-        currentUser = null;
-        wishlistSet = new Set();
-        teardownPresence();
-        renderAuthArea();
-        renderProducts();
-      });
+      document.getElementById('logoutBtn').addEventListener('click', performLogout);
     } else {
       inboxBtn.style.display = 'none';
       authArea.innerHTML = `<button class="login-btn" id="openAuthBtn">👤 Login / Signup</button>`;
@@ -1908,6 +1920,11 @@
   document.getElementById('closeAccountBtn').addEventListener('click', ()=>{
     accountModalOverlay.classList.remove('show');
     pendingAvatarData = null;
+  });
+  document.getElementById('accountLogoutBtn').addEventListener('click', ()=>{
+    if(confirm('Kya aap logout karna chahte hain?')){
+      performLogout();
+    }
   });
 
   function updateAvatarPreview(){
