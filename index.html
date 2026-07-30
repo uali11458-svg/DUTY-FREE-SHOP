@@ -1521,51 +1521,60 @@
   // ---------- Particle Shatter Animation (App-uninstall style delete effect) ----------
   function shatterElement(el){
     return new Promise(resolve=>{
-      if(!el){ resolve(); return; }
+      if(!el){ console.warn('shatterElement: no element passed'); resolve(); return; }
       const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if(reducedMotion){
+        console.log('shatterElement: reduced-motion mode, using simple fade');
         el.style.transition = 'opacity 0.25s ease';
         el.style.opacity = '0';
         setTimeout(resolve, 260);
         return;
       }
+      console.log('shatterElement: playing particle animation');
       const rect = el.getBoundingClientRect();
       const particleCount = 26;
       const container = document.createElement('div');
-      container.style.cssText = `position:fixed; left:${rect.left}px; top:${rect.top}px; width:${rect.width}px; height:${rect.height}px; pointer-events:none; z-index:500; overflow:visible;`;
+      container.style.cssText = `position:fixed; left:${rect.left}px; top:${rect.top}px; width:${rect.width}px; height:${rect.height}px; pointer-events:none; z-index:9999; overflow:visible;`;
       document.body.appendChild(container);
 
+      const particles = [];
       for(let i=0; i<particleCount; i++){
         const p = document.createElement('div');
         const size = 6 + Math.random()*16;
         const startX = Math.random()*rect.width;
         const startY = Math.random()*rect.height;
-        const angle = Math.random()*360;
-        const distance = 50 + Math.random()*130;
-        const dx = Math.cos(angle*Math.PI/180)*distance;
-        const dy = Math.sin(angle*Math.PI/180)*distance - 20; // slight upward drift
         const colorPick = Math.random() > 0.5 ? 'var(--gold)' : 'var(--teal)';
-        p.style.cssText = `
-          position:absolute; left:${startX}px; top:${startY}px;
-          width:${size}px; height:${size}px; border-radius:${Math.random()>0.5?'50%':'3px'};
-          background:${colorPick}; opacity:0.95;
-          transform:translate(0,0) rotate(0deg) scale(1);
-          transition:transform 0.75s cubic-bezier(.19,.87,.42,1), opacity 0.75s ease;
-        `;
+        p.style.position = 'absolute';
+        p.style.left = startX + 'px';
+        p.style.top = startY + 'px';
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+        p.style.background = colorPick;
+        p.style.opacity = '0.95';
+        p.style.transform = 'translate(0,0) rotate(0deg) scale(1)';
+        p.style.transition = 'transform 0.75s cubic-bezier(.19,.87,.42,1), opacity 0.75s ease';
         container.appendChild(p);
+        particles.push(p);
       }
 
       // fade/shrink the original card at the same time
       el.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
-      el.style.opacity = '0';
-      el.style.transform = 'scale(0.82)';
+
+      // force a reflow so the browser registers the starting state before we change it
+      // (without this, some browsers/webviews skip the transition entirely)
+      void container.offsetHeight;
 
       requestAnimationFrame(()=>{
-        container.querySelectorAll('div').forEach(p=>{
-          const dx = (Math.random()-0.5) * 220;
-          const dy = (Math.random()-0.9) * 220;
-          p.style.transform = `translate(${dx}px, ${dy}px) rotate(${Math.random()*400 - 200}deg) scale(0)`;
-          p.style.opacity = '0';
+        requestAnimationFrame(()=>{
+          el.style.opacity = '0';
+          el.style.transform = 'scale(0.82)';
+          particles.forEach(p=>{
+            const dx = (Math.random()-0.5) * 220;
+            const dy = (Math.random()-0.9) * 220;
+            p.style.transform = `translate(${dx}px, ${dy}px) rotate(${Math.random()*400 - 200}deg) scale(0)`;
+            p.style.opacity = '0';
+          });
         });
       });
 
