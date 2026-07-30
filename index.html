@@ -269,9 +269,15 @@
   .conv-item .conv-product{ font-size:10.5px; color:var(--teal); }
 
   /* ---------- Detail Modal / Carousel ---------- */
-  .detail-modal{ padding:0; overflow:hidden; }
+  .detail-modal .modal{
+    padding:0;
+    display:flex; flex-direction:column;
+    max-height:88vh;
+    overflow:hidden; /* whole modal never scrolls — only .detail-body does */
+  }
   .carousel{
     position:relative; width:100%; height:280px; background:var(--panel); overflow:hidden;
+    flex-shrink:0; /* images stay fixed size and never get squeezed or scroll */
   }
   .carousel-track{
     display:flex; height:100%; transition:transform 0.3s ease;
@@ -297,7 +303,11 @@
     width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.4); cursor:pointer;
   }
   .carousel-dots .dot.active{ background:var(--gold); }
-  .detail-body{ padding:22px; max-height:40vh; overflow-y:auto; }
+  .detail-body{
+    padding:22px;
+    flex:1 1 auto; min-height:0; /* min-height:0 is required for flex children to scroll properly */
+    overflow-y:auto;
+  }
 
   .report-link{
     background:none; border:none; color:var(--pink); font-size:12.5px; font-weight:600;
@@ -570,6 +580,7 @@
     transform-style:preserve-3d;
     transition:transform 0.15s ease, box-shadow 0.2s ease;
     position:relative;
+    text-decoration:none; color:inherit; cursor:pointer;
   }
   .card:hover{ box-shadow:0 20px 40px rgba(0,0,0,0.45), 0 0 0 1px var(--gold); }
   .card-img{
@@ -1784,7 +1795,7 @@
         : '';
       return `
       <div class="card-holder">
-        <div class="card" data-id="${p.id}">
+        <a class="card" href="?product=${p.id}" data-id="${p.id}">
           <div class="card-img">
             <span class="card-tag">${p.cat}</span>
             ${p.condition ? `<span class="condition-tag ${p.condition === 'New' ? 'cond-new' : 'cond-used'}">${p.condition}</span>` : ''}
@@ -1798,25 +1809,43 @@
             <div class="card-price">Rs ${Number(p.price).toLocaleString()} <small>PKR</small></div>
             ${statsLine}
             <div class="contact-row">
-              <a class="contact-btn call-btn" href="tel:${(p.phone||DEFAULT_PHONE).replace(/-/g,'')}">📞 Call</a>
-              <a class="contact-btn wa-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</a>
+              <button class="contact-btn call-btn" data-tel="${(p.phone||DEFAULT_PHONE).replace(/-/g,'')}">📞 Call</button>
+              <button class="contact-btn wa-btn" data-waurl="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</button>
               <button class="contact-btn share-btn" data-shareid="${p.id}">🔗 Share</button>
               ${msgBtn || '<span></span>'}
             </div>
           </div>
-        </div>
+        </a>
       </div>`;
     }).join('');
 
     grid.querySelectorAll('.cart-toggle-btn').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
+        e.preventDefault();
         e.stopPropagation();
         toggleCart(btn.dataset.cartid);
       });
     });
 
+    grid.querySelectorAll('.call-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        window.location.href = 'tel:' + btn.dataset.tel;
+      });
+    });
+
+    grid.querySelectorAll('.wa-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(btn.dataset.waurl, '_blank');
+      });
+    });
+
     grid.querySelectorAll('.msg-seller-btn').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
+        e.preventDefault();
         e.stopPropagation();
         const prod = products.find(x=>String(x.id) === String(btn.dataset.msgpid));
         if(prod) openChat(btn.dataset.msgid, btn.dataset.msgname, prod);
@@ -1825,15 +1854,18 @@
 
     grid.querySelectorAll('.share-btn').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
+        e.preventDefault();
         e.stopPropagation();
         const p = filtered.find(x=>String(x.id) === String(btn.dataset.shareid));
         if(p) openShareModal(p);
       });
     });
 
+    // Card itself is an <a href="?product=ID"> so right-click / middle-click "open in new tab" works natively.
+    // Normal left-click: prevent the page navigation/reload and open the modal instead.
     grid.querySelectorAll('.card').forEach(card=>{
       card.addEventListener('click', (e)=>{
-        if(e.target.closest('a, button')) return; // links/buttons handle their own action
+        e.preventDefault();
         const p = filtered.find(x=>String(x.id) === String(card.dataset.id));
         if(p) openDetailModal(p);
       });
@@ -1856,6 +1888,7 @@
 
     grid.querySelectorAll('.remove-tag').forEach(btn=>{
       btn.addEventListener('click', async (e)=>{
+        e.preventDefault();
         e.stopPropagation();
         const id = btn.dataset.id;
         if(!confirm('Ye product remove karna hai?')) return;
