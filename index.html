@@ -609,7 +609,17 @@
   .heart-btn.active{ background:rgba(230,57,113,0.25); }
   .card-body{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:5px; flex:1; }
   .card-body h4{ font-size:15px; font-weight:600; color:var(--cream); line-height:1.3; }
-  .seller-line{ font-size:11.5px; color:var(--teal); font-weight:600; }
+  .seller-line{
+    font-size:11.5px; color:var(--teal); font-weight:600;
+    display:flex; align-items:center; gap:5px;
+  }
+  .seller-mini-avatar{
+    width:16px; height:16px; border-radius:50%; overflow:hidden; flex-shrink:0;
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    display:flex; align-items:center; justify-content:center;
+    font-size:9px; font-weight:800;
+  }
+  .seller-mini-avatar img{ width:100%; height:100%; object-fit:cover; }
   .location-badge{
     font-size:12px; font-weight:700; color:var(--gold-light);
     background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.35);
@@ -1492,7 +1502,7 @@
       const { error } = await sb.from('products').insert([{
         name:p.name, cat:p.cat, subcat:p.subcat || null, condition:p.condition || null, city:p.city || null, price:p.price, desc:p.desc,
         phone:p.phone, image:p.image, images:p.images || null, custom:p.custom !== undefined ? p.custom : true,
-        seller_id: p.seller_id || null, seller_name: p.seller_name || null
+        seller_id: p.seller_id || null, seller_name: p.seller_name || null, seller_avatar: p.seller_avatar || null
       }]);
       if(error){
         console.error('Product insert failed:', error);
@@ -1675,7 +1685,12 @@
         : `<span class="rating-badge">⭐ New</span>`;
       const isVerifiedSeller = p.seller_id && verifiedSellersSet.has(String(p.seller_id));
       const verifiedBadgeHtml = isVerifiedSeller ? `<span class="verified-badge" title="Verified Seller">🛡️</span>` : '';
-      const sellerLine = p.seller_name ? `<div class="seller-line">👤 ${p.seller_name}${verifiedBadgeHtml} · ${ratingBadge}</div>` : '';
+      const sellerAvatarHtml = p.seller_avatar
+        ? `<img src="${p.seller_avatar}">`
+        : `<span>${(p.seller_name || '?').charAt(0).toUpperCase()}</span>`;
+      const sellerLine = p.seller_name
+        ? `<div class="seller-line"><span class="seller-mini-avatar">${sellerAvatarHtml}</span>${p.seller_name}${verifiedBadgeHtml} · ${ratingBadge}</div>`
+        : '';
       const statsLine = p.custom ? `<div class="stats-line">👁 ${p.views || 0} views · 💬 ${p.leads || 0} leads</div>` : '';
       const canMessage = currentUser && p.custom && p.seller_id && !isOwner;
       const msgBtn = canMessage
@@ -2075,6 +2090,10 @@
         await sb.from('products').update({ seller_name: newName }).eq('seller_id', currentUser.id);
         products.forEach(p=>{ if(p.seller_id === currentUser.id) p.seller_name = newName; });
       }
+      if(pendingAvatarData && sharedWorking && sb){
+        await sb.from('products').update({ seller_avatar: pendingAvatarData }).eq('seller_id', currentUser.id);
+        products.forEach(p=>{ if(p.seller_id === currentUser.id) p.seller_avatar = pendingAvatarData; });
+      }
 
       pendingAvatarData = null;
       renderAuthArea();
@@ -2420,7 +2439,8 @@
       images: JSON.stringify(selectedImages),
       custom: true,
       seller_id: currentUser.id,
-      seller_name: currentUser.name
+      seller_name: currentUser.name,
+      seller_avatar: currentUser.avatar_url || null
     };
 
     let addSucceeded = true;
@@ -2491,7 +2511,10 @@
     const ratingText = p.seller_id ? (sellerRating ? ` · ⭐ ${sellerRating.avg.toFixed(1)} (${sellerRating.count})` : ' · ⭐ New') : '';
     const isVerifiedSellerDetail = p.seller_id && verifiedSellersSet.has(String(p.seller_id));
     const verifiedBadgeDetail = isVerifiedSellerDetail ? `<span class="verified-badge" title="Verified Seller">🛡️ Verified</span>` : '';
-    document.getElementById('detailSeller').innerHTML = p.seller_name ? `👤 ${p.seller_name}${ratingText} ${verifiedBadgeDetail}` : '';
+    const detailAvatarHtml = p.seller_avatar
+      ? `<span class="seller-mini-avatar" style="width:22px;height:22px;font-size:11px;"><img src="${p.seller_avatar}"></span>`
+      : `<span class="seller-mini-avatar" style="width:22px;height:22px;font-size:11px;"><span>${(p.seller_name||'?').charAt(0).toUpperCase()}</span></span>`;
+    document.getElementById('detailSeller').innerHTML = p.seller_name ? `${detailAvatarHtml} ${p.seller_name}${ratingText} ${verifiedBadgeDetail}` : '';
     const locEl = document.getElementById('detailLocation');
     if(p.city){
       locEl.textContent = `📍 ${p.city}, Pakistan`;
