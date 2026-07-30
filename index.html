@@ -1489,11 +1489,15 @@
 
   async function addProductToDb(p, isNew=true){
     if(sharedWorking && sb){
-      await sb.from('products').insert([{
+      const { error } = await sb.from('products').insert([{
         name:p.name, cat:p.cat, subcat:p.subcat || null, condition:p.condition || null, city:p.city || null, price:p.price, desc:p.desc,
         phone:p.phone, image:p.image, images:p.images || null, custom:p.custom !== undefined ? p.custom : true,
         seller_id: p.seller_id || null, seller_name: p.seller_name || null
       }]);
+      if(error){
+        console.error('Product insert failed:', error);
+        throw error;
+      }
     } else {
       if(isNew){
         products.unshift({ ...p, id: Date.now() });
@@ -1506,7 +1510,8 @@
 
   async function removeProductFromDb(id){
     if(sharedWorking && sb){
-      await sb.from('products').delete().eq('id', id);
+      const { error } = await sb.from('products').delete().eq('id', id);
+      if(error){ console.error('Product delete failed:', error); alert('Delete nahi ho saka: ' + error.message); }
     } else {
       products = products.filter(p=>p.id !== id);
       localStorage.setItem('dfs_products', JSON.stringify(products));
@@ -2418,15 +2423,19 @@
       seller_name: currentUser.name
     };
 
+    let addSucceeded = true;
     try{
       await addProductToDb(newProduct);
     } catch(e){
-      alert("Product add nahi ho saka, dobara koshish karein.");
+      addSucceeded = false;
+      alert("Product add nahi ho saka.\nWajah: " + (e.message || JSON.stringify(e)));
       console.error(e);
     }
 
     submitBtn.disabled = false;
     submitBtn.textContent = "Product Add Karein";
+
+    if(!addSucceeded) return; // keep form filled so user can retry
 
     // reset form
     document.getElementById('pName').value = '';
