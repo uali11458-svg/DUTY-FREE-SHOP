@@ -149,6 +149,15 @@
   }
   .city-filter-select:focus{ outline:2px solid var(--teal); }
 
+  .city-picker-item{
+    padding:11px 14px; border-radius:9px; cursor:pointer; font-size:14px; color:var(--cream);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .city-picker-item:hover{ background:var(--panel); }
+  .city-picker-item.pinned{ color:var(--gold-light); font-weight:700; border-bottom:1px solid var(--line); border-radius:0; margin-bottom:6px; padding-bottom:14px; }
+  .city-picker-item .check{ color:var(--teal); font-weight:700; }
+  .city-picker-empty{ text-align:center; color:var(--muted); font-size:13px; padding:20px 0; }
+
   .theme-toggle-btn{
     background:var(--panel); border:1px solid var(--line); color:var(--gold-light);
     width:42px; height:42px; border-radius:50%; font-size:17px; cursor:pointer;
@@ -316,6 +325,7 @@
   .report-reasons{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
 
   .star-picker{ margin-top:20px; display:flex; justify-content:center; gap:8px; }
+
   .star-pick{ font-size:38px; color:var(--muted); cursor:pointer; transition:color 0.15s ease, transform 0.15s ease; }
   .star-pick:hover{ transform:scale(1.1); }
   .star-pick.active{ color:var(--gold); }
@@ -699,6 +709,12 @@
     background:var(--panel); color:var(--cream);
   }
   .field input:focus, .field textarea:focus, .field select:focus{ outline:2px solid var(--teal); }
+  .city-field-btn{
+    width:100%; padding:11px 13px; border-radius:9px; text-align:left;
+    border:1px solid var(--line); font-family:'Poppins'; font-size:14px;
+    background:var(--panel); color:var(--cream); cursor:pointer;
+  }
+  .city-field-btn:hover{ border-color:var(--gold); }
   .img-preview{
     margin-top:10px; width:100%; height:130px; border-radius:10px;
     background:var(--panel); border:1px dashed var(--line);
@@ -904,21 +920,8 @@
       <input type="text" id="searchInput" placeholder="Products dhoondein — jese 'kurti', 'mobile', 'shoes'...">
       <button id="searchClearBtn" style="display:none;">✕</button>
     </div>
-    <select id="cityFilterSelect" class="city-filter-select">
-      <option value="All">🌍 All Pakistan</option>
-      <option value="Karachi">Karachi</option>
-      <option value="Lahore">Lahore</option>
-      <option value="Islamabad">Islamabad</option>
-      <option value="Rawalpindi">Rawalpindi</option>
-      <option value="Peshawar">Peshawar</option>
-      <option value="Quetta">Quetta</option>
-      <option value="Multan">Multan</option>
-      <option value="Faisalabad">Faisalabad</option>
-      <option value="Sialkot">Sialkot</option>
-      <option value="Gujranwala">Gujranwala</option>
-      <option value="Hyderabad">Hyderabad</option>
-      <option value="Other Pakistan City">Other City</option>
-    </select>
+    <button type="button" id="cityFilterBtn" class="city-filter-select">🌍 All Pakistan</button>
+    <input type="hidden" id="cityFilterSelect" value="All">
     <button class="theme-toggle-btn" id="themeToggleBtn" title="Dark/Light Mode">🌙</button>
     <button class="chats-btn" id="openInboxBtn" style="display:none;">💬 Mera Chat</button>
     <div id="authArea">
@@ -1109,21 +1112,9 @@
     </div>
 
     <div class="field">
-      <label for="editCity">Shehar (City)</label>
-      <select id="editCity">
-        <option>Karachi</option>
-        <option>Lahore</option>
-        <option>Islamabad</option>
-        <option>Rawalpindi</option>
-        <option>Peshawar</option>
-        <option>Quetta</option>
-        <option>Multan</option>
-        <option>Faisalabad</option>
-        <option>Sialkot</option>
-        <option>Gujranwala</option>
-        <option>Hyderabad</option>
-        <option>Other Pakistan City</option>
-      </select>
+      <label for="editCityBtn">Shehar (City)</label>
+      <button type="button" id="editCityBtn" class="city-field-btn">Karachi</button>
+      <input type="hidden" id="editCity" value="Karachi">
     </div>
 
     <div class="field">
@@ -1213,6 +1204,18 @@
     </div>
 
     <button class="btn-primary" id="submitReportBtn" style="width:100%; margin-top:18px;">Report Submit Karein</button>
+  </div>
+</div>
+
+<!-- City Picker Modal -->
+<div class="modal-overlay" id="cityPickerOverlay">
+  <div class="modal" style="max-width:360px; padding:0; display:flex; flex-direction:column; max-height:75vh;">
+    <div style="padding:20px 20px 12px;">
+      <button class="close-x" id="closeCityPickerBtn">✕</button>
+      <h3 style="margin-bottom:12px;">📍 Shehar Chunein</h3>
+      <input type="text" id="citySearchInput" placeholder="Shehar dhoondein... jese 'Fais'" style="width:100%; padding:11px 14px; border-radius:9px; border:1px solid var(--line); background:var(--panel); color:var(--cream); font-family:'Poppins'; font-size:14px;">
+    </div>
+    <div id="cityPickerList" style="overflow-y:auto; padding:6px 12px 16px; flex:1;"></div>
   </div>
 </div>
 
@@ -1339,21 +1342,9 @@
     </div>
 
     <div class="field">
-      <label for="pCity">Shehar (City)</label>
-      <select id="pCity">
-        <option>Karachi</option>
-        <option>Lahore</option>
-        <option>Islamabad</option>
-        <option>Rawalpindi</option>
-        <option>Peshawar</option>
-        <option>Quetta</option>
-        <option>Multan</option>
-        <option>Faisalabad</option>
-        <option>Sialkot</option>
-        <option>Gujranwala</option>
-        <option>Hyderabad</option>
-        <option>Other Pakistan City</option>
-      </select>
+      <label for="pCityBtn">Shehar (City)</label>
+      <button type="button" id="pCityBtn" class="city-field-btn">Karachi</button>
+      <input type="hidden" id="pCity" value="Karachi">
     </div>
 
     <div class="field">
@@ -1397,6 +1388,17 @@
     {id:6, name:"Handmade Clay Pot", cat:"Handmade", price:850, desc:"Ghar ke decoration ke liye khoobsurat clay pot.", emoji:"🏺", phone:DEFAULT_PHONE, image:null, custom:false},
     {id:7, name:"Men's Casual Kurta", cat:"Fashion", price:1899, desc:"Comfortable cotton kurta, roz mara pehnne ke liye.", emoji:"👕", phone:DEFAULT_PHONE, image:null, custom:false},
     {id:8, name:"Power Bank 20000mAh", cat:"Electronics", price:2999, desc:"Fast charging, do devices ek sath charge karein.", emoji:"🔋", phone:DEFAULT_PHONE, image:null, custom:false},
+  ];
+
+  const PAKISTAN_CITIES = [
+    "Karachi", "Lahore", "Islamabad", "Rawalpindi", "Peshawar", "Quetta", "Multan", "Faisalabad",
+    "Sialkot", "Gujranwala", "Hyderabad", "Sukkur", "Larkana", "Abbottabad", "Mardan", "Bahawalpur",
+    "Sargodha", "Mirpur (AJK)", "Gilgit", "Skardu", "Sahiwal", "Sheikhupura", "Rahim Yar Khan", "Jhang",
+    "Gujrat", "Kasur", "Okara", "Mingora (Swat)", "Nawabshah", "Dera Ghazi Khan", "Dera Ismail Khan",
+    "Chiniot", "Kamoke", "Hafizabad", "Muzaffarabad", "Kotli", "Turbat", "Gwadar", "Khuzdar", "Chaman",
+    "Jacobabad", "Mianwali", "Attock", "Chakwal", "Jhelum", "Kohat", "Bannu", "Swabi", "Nowshera",
+    "Charsadda", "Vehari", "Khanewal", "Muzaffargarh", "Layyah", "Toba Tek Singh", "Mandi Bahauddin",
+    "Narowal", "Pakpattan", "Other Pakistan City"
   ];
 
   const categoryStructure = {
@@ -2412,6 +2414,7 @@
     document.getElementById('editCat').value = p.cat || 'Fashion';
     populateEditSubcat(document.getElementById('editCat').value, p.subcat);
     document.getElementById('editCity').value = p.city || 'Karachi';
+    document.getElementById('editCityBtn').textContent = p.city || 'Karachi';
     document.getElementById('editPrice').value = p.price || '';
     document.getElementById('editDesc').value = p.desc || '';
     editModalOverlay.classList.add('show');
@@ -2539,6 +2542,77 @@
   }
 
   // ---------- Category / Sub-Category setup for Sell Form ----------
+  // ---------- Searchable City Picker ----------
+  let cityPickerTarget = null; // 'filter' | 'sell' | 'edit'
+  const cityPickerOverlay = document.getElementById('cityPickerOverlay');
+  const citySearchInput = document.getElementById('citySearchInput');
+
+  function openCityPicker(target){
+    cityPickerTarget = target;
+    citySearchInput.value = '';
+    renderCityPickerList('');
+    cityPickerOverlay.classList.add('show');
+    setTimeout(()=> citySearchInput.focus(), 50);
+  }
+  document.getElementById('closeCityPickerBtn').addEventListener('click', ()=>{
+    cityPickerOverlay.classList.remove('show');
+  });
+
+  function currentCityFieldValue(){
+    if(cityPickerTarget === 'filter') return document.getElementById('cityFilterSelect').value;
+    if(cityPickerTarget === 'sell') return document.getElementById('pCity').value;
+    if(cityPickerTarget === 'edit') return document.getElementById('editCity').value;
+    return '';
+  }
+
+  function renderCityPickerList(query){
+    const list = document.getElementById('cityPickerList');
+    const q = query.trim().toLowerCase();
+    const selected = currentCityFieldValue();
+
+    let html = '';
+    if(cityPickerTarget === 'filter' && (q === '' || 'all pakistan'.includes(q))){
+      html += `<div class="city-picker-item pinned" data-city="All">🌍 All Pakistan ${selected === 'All' ? '<span class="check">✓</span>' : ''}</div>`;
+    }
+
+    const matches = PAKISTAN_CITIES.filter(c => c.toLowerCase().includes(q));
+    if(matches.length === 0 && html === ''){
+      list.innerHTML = '<div class="city-picker-empty">Koi shehar nahi mila.</div>';
+      return;
+    }
+    html += matches.map(c =>
+      `<div class="city-picker-item" data-city="${c}">${c} ${selected === c ? '<span class="check">✓</span>' : ''}</div>`
+    ).join('');
+
+    list.innerHTML = html;
+
+    list.querySelectorAll('.city-picker-item').forEach(item=>{
+      item.addEventListener('click', ()=> selectCity(item.dataset.city));
+    });
+  }
+
+  citySearchInput.addEventListener('input', (e)=> renderCityPickerList(e.target.value));
+
+  function selectCity(city){
+    if(cityPickerTarget === 'filter'){
+      const hidden = document.getElementById('cityFilterSelect');
+      hidden.value = city;
+      document.getElementById('cityFilterBtn').textContent = city === 'All' ? '🌍 All Pakistan' : city;
+      hidden.dispatchEvent(new Event('change'));
+    } else if(cityPickerTarget === 'sell'){
+      document.getElementById('pCity').value = city;
+      document.getElementById('pCityBtn').textContent = city;
+    } else if(cityPickerTarget === 'edit'){
+      document.getElementById('editCity').value = city;
+      document.getElementById('editCityBtn').textContent = city;
+    }
+    cityPickerOverlay.classList.remove('show');
+  }
+
+  document.getElementById('cityFilterBtn').addEventListener('click', ()=> openCityPicker('filter'));
+  document.getElementById('pCityBtn').addEventListener('click', ()=> openCityPicker('sell'));
+  document.getElementById('editCityBtn').addEventListener('click', ()=> openCityPicker('edit'));
+
   function populateCategoryDropdowns(){
     const catSelect = document.getElementById('pCat');
     Object.keys(categoryStructure).forEach(mainCat=>{
