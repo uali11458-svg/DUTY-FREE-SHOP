@@ -871,6 +871,8 @@
     content:"•"; position:absolute; left:0; color:var(--gold); font-weight:700;
   }
   .legal-list li b{ color:var(--gold-light); }
+  .about-link{ color:var(--teal); text-decoration:underline; font-weight:600; }
+  .about-link:hover{ color:var(--gold-light); }
 
   @media (max-width:780px){
     .hero{ grid-template-columns:1fr; padding-top:36px; }
@@ -1110,11 +1112,30 @@
 <footer>
   <b>DFS — Duty Free Shop</b> · Contact: 0336-8345678 (Call / WhatsApp) · Aapke apne products aap khud list karein.
   <div class="footer-links">
+    <a href="#" id="openAboutBtn">About Us</a>
+    <span>·</span>
     <a href="#" id="openTermsBtn">Terms & Conditions</a>
     <span>·</span>
     <a href="#" id="openPrivacyBtn">Privacy Policy</a>
   </div>
 </footer>
+
+<!-- About Us Modal -->
+<div class="modal-overlay" id="aboutModalOverlay">
+  <div class="modal legal-modal">
+    <button class="close-x" id="closeAboutBtn">✕</button>
+    <h3>ℹ️ About Us</h3>
+    <p class="sub">DFS - Duty Free Shop ke baare mein</p>
+    <ul class="legal-list">
+      <li><b>Website Owner:</b> Ali Akbar</li>
+      <li><b>Father Name:</b> Ubaid Ali</li>
+      <li><b>Website Developer:</b> Ali Akbar</li>
+      <li><b>Founder of:</b> MATRIX STUDIOS</li>
+      <li><b>Website Partner:</b> M. Jawad</li>
+      <li><b>LinkedIn:</b> <a href="https://www.linkedin.com/in/matrix-studios-388972412" target="_blank" class="about-link">Matrix Studios LinkedIn</a></li>
+    </ul>
+  </div>
+</div>
 
 <!-- Terms & Conditions Modal -->
 <div class="modal-overlay" id="termsModalOverlay">
@@ -2838,7 +2859,14 @@
   document.getElementById('pCityBtn').addEventListener('click', ()=> openCityPicker('sell'));
   document.getElementById('editCityBtn').addEventListener('click', ()=> openCityPicker('edit'));
 
-  // ---------- Terms & Privacy Modals ----------
+  // ---------- About / Terms & Privacy Modals ----------
+  document.getElementById('openAboutBtn').addEventListener('click', (e)=>{
+    e.preventDefault();
+    document.getElementById('aboutModalOverlay').classList.add('show');
+  });
+  document.getElementById('closeAboutBtn').addEventListener('click', ()=>{
+    document.getElementById('aboutModalOverlay').classList.remove('show');
+  });
   document.getElementById('openTermsBtn').addEventListener('click', (e)=>{
     e.preventDefault();
     document.getElementById('termsModalOverlay').classList.add('show');
