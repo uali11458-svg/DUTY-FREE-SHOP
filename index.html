@@ -677,6 +677,23 @@
     .skeleton-shimmer{ animation:none; }
   }
 
+  .card-featured{
+    border-color:var(--gold) !important;
+    box-shadow:0 0 0 1.5px var(--gold), 0 8px 24px rgba(212,175,55,0.18);
+  }
+  .featured-ribbon{
+    position:absolute; top:0; left:0; right:0;
+    background:linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+    color:var(--navy); font-size:10px; font-weight:800; letter-spacing:0.5px;
+    padding:4px 0; text-align:center; z-index:2;
+  }
+  .card-img.has-ribbon .card-tag,
+  .card-img.has-ribbon .condition-tag,
+  .card-img.has-ribbon .remove-tag,
+  .card-img.has-ribbon .cart-toggle-btn{
+    top:28px;
+  }
+
   .card{
     background:var(--panel);
     border:1px solid var(--line);
@@ -1954,6 +1971,10 @@
     }
     // 'newest' = default order already (products loaded ordered by id desc)
 
+    // VIP Showcase: featured ads always float to the top, no matter which sort is active.
+    // The chosen sort order above is still respected *within* each group (featured vs regular).
+    filtered = [...filtered].sort((a,b)=> (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
+
     shopTitle.textContent = searchTerm ? `"${searchTerm}" ke natayej (${filtered.length})` : (activeCat==="All" ? "Sab Products" : activeCat + " Products");
 
     if(filtered.length === 0){
@@ -1991,8 +2012,9 @@
         : '';
       return `
       <div class="card-holder">
-        <a class="card" href="?product=${p.id}" data-id="${p.id}">
-          <div class="card-img">
+        <a class="card ${p.is_featured ? 'card-featured' : ''}" href="?product=${p.id}" data-id="${p.id}">
+          <div class="card-img ${p.is_featured ? 'has-ribbon' : ''}">
+            ${p.is_featured ? `<span class="featured-ribbon">⭐ Featured</span>` : ''}
             <span class="card-tag">${p.cat}</span>
             ${p.condition ? `<span class="condition-tag ${p.condition === 'New' ? 'cond-new' : 'cond-used'}">${p.condition}</span>` : ''}
             ${p.custom && isOwner ? `<button class="remove-tag" data-id="${String(p.id)}">Remove</button>` : ''}
