@@ -1294,17 +1294,7 @@
 
     <div class="field">
       <label for="editCat">Main Category</label>
-      <select id="editCat">
-        <option>Electronics</option>
-        <option>Fashion</option>
-        <option>Home</option>
-        <option>Vehicles</option>
-        <option>Beauty</option>
-        <option value="Sports & Books">Sports & Books</option>
-        <option>Grocery</option>
-        <option>Handmade</option>
-        <option>Other</option>
-      </select>
+      <select id="editCat"></select>
     </div>
 
     <div class="field">
@@ -1613,14 +1603,61 @@
   ];
 
   const categoryStructure = {
-    "Electronics": ["Mobiles", "Mobile Accessories", "Laptops", "Audio", "Wearables", "Cameras", "TVs", "Other Electronics"],
-    "Fashion": ["Men's Clothing", "Women's Clothing", "Kids' Clothing", "Shoes", "Bags & Accessories", "Jewelry & Watches"],
-    "Home": ["Furniture", "Kitchen & Dining", "Home Decor", "Bedding & Bath", "Appliances"],
-    "Vehicles": ["Cars", "Motorcycles", "Auto Parts & Accessories", "Bicycles"],
-    "Beauty": ["Skincare", "Makeup", "Haircare", "Fragrances", "Personal Care"],
-    "Sports & Books": ["Sports Equipment", "Fitness", "Books", "Outdoor & Camping"],
-    "Grocery": ["Grocery Items"],
-    "Handmade": ["Handmade Items"],
+    "Electronics": [
+      "Mobiles", "Mobile Accessories", "Laptops", "Computers & Accessories", "Tablets",
+      "Cameras & Camera Accessories", "Audio & Headphones", "TVs & Home Theater",
+      "Gaming & Consoles", "Smart Watches & Wearables", "Printers & Scanners",
+      "Networking & WiFi Devices", "Kitchen Electronics", "Other Electronics"
+    ],
+    "Fashion": [
+      "Men's Clothing", "Women's Clothing", "Kids' Clothing", "Men's Shoes", "Women's Shoes",
+      "Kids' Shoes", "Bags & Purses", "Jewelry", "Watches", "Sunglasses & Eyewear",
+      "Traditional & Formal Wear", "Winter Wear", "Sportswear"
+    ],
+    "Home": [
+      "Furniture", "Sofas & Chairs", "Beds & Mattresses", "Kitchen & Dining", "Home Decor",
+      "Bedding & Bath", "Home Appliances", "Kitchen Appliances", "Garden & Outdoor",
+      "Lighting", "Storage & Organization", "Curtains & Rugs"
+    ],
+    "Vehicles": [
+      "Cars", "Motorcycles", "Auto Parts & Accessories", "Bicycles", "Trucks & Heavy Vehicles",
+      "Rickshaws & Loaders", "Boats & Water Vehicles", "Tyres & Rims", "Vehicle Documents / Number Plates"
+    ],
+    "Beauty": [
+      "Skincare", "Makeup", "Haircare", "Fragrances & Perfumes", "Personal Care",
+      "Health Supplements", "Beauty Tools & Equipment"
+    ],
+    "Sports & Books": [
+      "Sports Equipment", "Gym & Fitness Equipment", "Books & Magazines", "Musical Instruments",
+      "Outdoor & Camping Gear", "Toys & Games", "Collectibles & Art"
+    ],
+    "Property": [
+      "Houses for Sale", "Houses for Rent", "Flats / Apartments", "Plots & Land",
+      "Commercial Property", "Portions & Rooms", "Farmhouses"
+    ],
+    "Jobs": [
+      "Full Time Jobs", "Part Time Jobs", "Freelance / Remote Work", "Internships", "Domestic Staff"
+    ],
+    "Services": [
+      "Home Repair Services", "Tutoring & Classes", "Event & Wedding Services", "IT & Web Services",
+      "Beauty & Salon Services", "Transport & Moving Services", "Legal & Consultancy"
+    ],
+    "Pets": [
+      "Pets for Sale / Adoption", "Pet Accessories", "Pet Food", "Pet Care Services"
+    ],
+    "Kids & Baby": [
+      "Baby Clothing", "Baby Toys", "Prams & Strollers", "Baby Care Products", "Baby Furniture"
+    ],
+    "Business & Industrial": [
+      "Office Furniture & Supplies", "Machinery & Tools", "Industrial Equipment",
+      "Restaurant & Catering Equipment", "Raw Materials"
+    ],
+    "Grocery": [
+      "Grocery Items", "Beverages", "Snacks & Bakery", "Organic / Health Foods"
+    ],
+    "Handmade": [
+      "Handmade Items", "Art & Crafts", "Custom Orders", "Handmade Jewelry"
+    ],
     "Other": ["Other"]
   };
   const categories = ["All", ...Object.keys(categoryStructure)];
@@ -2884,11 +2921,17 @@
 
   function populateCategoryDropdowns(){
     const catSelect = document.getElementById('pCat');
+    const editCatSelect = document.getElementById('editCat');
     Object.keys(categoryStructure).forEach(mainCat=>{
       const opt = document.createElement('option');
       opt.value = mainCat;
       opt.textContent = mainCat;
       catSelect.appendChild(opt);
+
+      const opt2 = document.createElement('option');
+      opt2.value = mainCat;
+      opt2.textContent = mainCat;
+      editCatSelect.appendChild(opt2);
     });
   }
   populateCategoryDropdowns();
