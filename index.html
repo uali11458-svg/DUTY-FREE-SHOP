@@ -615,6 +615,28 @@
     gap:22px;
   }
   .card-holder{ perspective:900px; }
+  /* ---------- Skeleton Shimmer Loaders ---------- */
+  .skeleton-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+  }
+  .skeleton-shimmer{
+    background:linear-gradient(90deg, var(--panel) 0%, rgba(255,255,255,0.06) 50%, var(--panel) 100%);
+    background-size:200% 100%;
+    animation:skeleton-shine 1.4s ease-in-out infinite;
+  }
+  @keyframes skeleton-shine{
+    0%{ background-position:200% 0; }
+    100%{ background-position:-200% 0; }
+  }
+  .skeleton-img{ height:170px; }
+  .skeleton-line{ height:12px; border-radius:6px; margin:10px 14px; }
+  .skeleton-line.w60{ width:60%; }
+  .skeleton-line.w40{ width:40%; }
+  .skeleton-line.w80{ width:80%; }
+  @media (prefers-reduced-motion: reduce){
+    .skeleton-shimmer{ animation:none; }
+  }
+
   .card{
     background:var(--panel);
     border:1px solid var(--line);
@@ -1548,12 +1570,16 @@
       }
 
       sharedWorking = true;
-      await loadSellerRatings();
-      await loadVerifiedSellers();
       renderCategories();
-      renderProducts();
+      renderProducts(); // render products instantly — don't block on ratings/verification data
       hideSplashScreen();
       checkSharedProductLink();
+
+      // load ratings & verified-badge data in the background (non-blocking);
+      // re-render once ready so badges/stars simply pop in without delaying the initial view
+      Promise.all([loadSellerRatings(), loadVerifiedSellers()])
+        .then(()=> renderProducts())
+        .catch(e => console.warn('Background ratings/verification load failed (non-critical):', e));
 
       // realtime: jab bhi kahin se bhi product add/remove ho, sab phones auto-update ho jayenge
       sb.channel('products-realtime')
@@ -1784,6 +1810,23 @@
   const shopTitle = document.getElementById('shopTitle');
   const searchInput = document.getElementById('searchInput');
 
+  function renderSkeletonGrid(count){
+    const cards = [];
+    for(let i=0; i<count; i++){
+      cards.push(`
+        <div class="card-holder">
+          <div class="skeleton-card">
+            <div class="skeleton-img skeleton-shimmer"></div>
+            <div class="skeleton-line w80 skeleton-shimmer"></div>
+            <div class="skeleton-line w40 skeleton-shimmer"></div>
+            <div class="skeleton-line w60 skeleton-shimmer"></div>
+          </div>
+        </div>`);
+    }
+    grid.innerHTML = cards.join('');
+  }
+  renderSkeletonGrid(8); // show shimmer immediately, before any data/network call
+
   function renderCategories(){
     catWrap.innerHTML = categories.map(c =>
       `<button class="chip ${c===activeCat?'active':''}" data-cat="${c}">${c}</button>`
@@ -1870,7 +1913,7 @@
       const waNum = toWaNumber(p.phone || DEFAULT_PHONE);
       const waMsg = encodeURIComponent(`Assalam o Alaikum, mujhe "${p.name}" ke baare mein maloomat chahiye.`);
       const imgHtml = p.image
-        ? `<img src="${p.image}" alt="${p.name}">`
+        ? `<img loading="lazy" decoding="async" src="${p.image}" alt="${p.name}">`
         : `<span>${p.emoji || '📦'}</span>`;
       const isOwner = currentUser && p.seller_id === currentUser.id;
       const ratingInfo = sellerRatingsMap[p.seller_id];
@@ -1880,7 +1923,7 @@
       const isVerifiedSeller = p.seller_id && verifiedSellersSet.has(String(p.seller_id));
       const verifiedBadgeHtml = isVerifiedSeller ? `<span class="verified-badge" title="Verified Seller">🛡️</span>` : '';
       const sellerAvatarHtml = p.seller_avatar
-        ? `<img src="${p.seller_avatar}">`
+        ? `<img loading="lazy" decoding="async" src="${p.seller_avatar}">`
         : `<span>${(p.seller_name || '?').charAt(0).toUpperCase()}</span>`;
       const sellerLine = p.seller_name
         ? `<div class="seller-line"><span class="seller-mini-avatar">${sellerAvatarHtml}</span>${p.seller_name}${verifiedBadgeHtml} · ${ratingBadge}</div>`
@@ -2061,7 +2104,7 @@
       inboxBtn.style.display = 'inline-block';
       const initial = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
       const avatarHtml = currentUser.avatar_url
-        ? `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+        ? `<img loading="lazy" decoding="async" src="${currentUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
         : initial;
       authArea.innerHTML = `
         <div class="user-badge">
@@ -2221,7 +2264,7 @@
   function updateAvatarPreview(){
     const el = document.getElementById('avatarPreview');
     if(currentUser.avatar_url){
-      el.innerHTML = `<img src="${currentUser.avatar_url}">`;
+      el.innerHTML = `<img loading="lazy" decoding="async" src="${currentUser.avatar_url}">`;
     } else {
       el.textContent = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
     }
@@ -2275,7 +2318,7 @@
         const sy = (img.height - minSide) / 2;
         ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
         pendingAvatarData = canvas.toDataURL('image/jpeg', 0.85);
-        document.getElementById('avatarPreview').innerHTML = `<img src="${pendingAvatarData}">`;
+        document.getElementById('avatarPreview').innerHTML = `<img loading="lazy" decoding="async" src="${pendingAvatarData}">`;
       };
       img.src = ev.target.result;
     };
@@ -2355,7 +2398,7 @@
     const totalAmount = items.reduce((sum, p) => sum + Number(p.price || 0), 0);
 
     container.innerHTML = items.map(p=>{
-      const imgInner = p.image ? `<img src="${p.image}">` : `<span>${p.emoji || '📦'}</span>`;
+      const imgInner = p.image ? `<img loading="lazy" decoding="async" src="${p.image}">` : `<span>${p.emoji || '📦'}</span>`;
       return `
       <div class="cart-item" data-id="${p.id}">
         <div class="wl-img">${imgInner}</div>
@@ -2448,7 +2491,7 @@
       return;
     }
     container.innerHTML = items.map(p=>{
-      const imgInner = p.image ? `<img src="${p.image}">` : `<span>${p.emoji || '📦'}</span>`;
+      const imgInner = p.image ? `<img loading="lazy" decoding="async" src="${p.image}">` : `<span>${p.emoji || '📦'}</span>`;
       return `
       <div class="myad-item" data-id="${p.id}">
         <div class="wl-img">${imgInner}</div>
@@ -2596,7 +2639,7 @@
     }
     imgPreview.innerHTML = selectedImages.map((img, i) =>
       `<div style="position:relative; width:70px; height:70px;">
-        <img src="${img}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        <img loading="lazy" decoding="async" src="${img}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
         <button type="button" data-i="${i}" class="rm-img-btn" style="position:absolute;top:-6px;right:-6px;background:var(--pink);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;">✕</button>
       </div>`
     ).join('');
@@ -2874,7 +2917,7 @@
     const isVerifiedSellerDetail = p.seller_id && verifiedSellersSet.has(String(p.seller_id));
     const verifiedBadgeDetail = isVerifiedSellerDetail ? `<span class="verified-badge" title="Verified Seller">🛡️ Verified</span>` : '';
     const detailAvatarHtml = p.seller_avatar
-      ? `<span class="seller-mini-avatar" style="width:22px;height:22px;font-size:11px;"><img src="${p.seller_avatar}"></span>`
+      ? `<span class="seller-mini-avatar" style="width:22px;height:22px;font-size:11px;"><img loading="lazy" decoding="async" src="${p.seller_avatar}"></span>`
       : `<span class="seller-mini-avatar" style="width:22px;height:22px;font-size:11px;"><span>${(p.seller_name||'?').charAt(0).toUpperCase()}</span></span>`;
     document.getElementById('detailSeller').innerHTML = p.seller_name ? `${detailAvatarHtml} ${p.seller_name}${ratingText} ${verifiedBadgeDetail}` : '';
     const locEl = document.getElementById('detailLocation');
@@ -2935,7 +2978,7 @@
       document.getElementById('carouselNext').style.display = 'none';
       return;
     }
-    track.innerHTML = carouselImages.map(img => `<div class="slide"><img src="${img}"></div>`).join('');
+    track.innerHTML = carouselImages.map(img => `<div class="slide"><img loading="lazy" decoding="async" src="${img}"></div>`).join('');
     dots.innerHTML = carouselImages.map((_, i) => `<div class="dot ${i===carouselIndex?'active':''}" data-i="${i}"></div>`).join('');
     dots.querySelectorAll('.dot').forEach(d=>{
       d.addEventListener('click', ()=>{ carouselIndex = parseInt(d.dataset.i); updateCarouselPosition(); });
@@ -3208,7 +3251,7 @@
 
       listEl.innerHTML = reviews.map(r=>{
         const initial = (r.buyer_name || '?').charAt(0).toUpperCase();
-        const avatarHtml = r.buyer_avatar ? `<img src="${r.buyer_avatar}">` : initial;
+        const avatarHtml = r.buyer_avatar ? `<img loading="lazy" decoding="async" src="${r.buyer_avatar}">` : initial;
         const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
         const stars = '★'.repeat(r.rating_value) + '☆'.repeat(5 - r.rating_value);
         return `
@@ -3329,7 +3372,7 @@
 
     // Product context bar
     const pcbImg = document.getElementById('pcbImg');
-    pcbImg.innerHTML = product.image ? `<img src="${product.image}">` : (product.emoji || '📦');
+    pcbImg.innerHTML = product.image ? `<img loading="lazy" decoding="async" src="${product.image}">` : (product.emoji || '📦');
     document.getElementById('pcbTitle').textContent = product.name;
     document.getElementById('pcbPrice').textContent = product.price ? `Rs ${Number(product.price).toLocaleString()}` : '';
 
