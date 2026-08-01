@@ -324,6 +324,40 @@
   }
   .report-reasons{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
 
+  /* ---------- Reviews Section (Play Store style) ---------- */
+  .reviews-section{ margin-top:22px; border-top:1px solid var(--line); padding-top:18px; }
+  .reviews-summary{
+    display:flex; align-items:center; gap:16px; margin-bottom:16px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px;
+  }
+  .reviews-summary .avg-score{
+    font-family:'Playfair Display'; font-size:36px; font-weight:800; color:var(--gold-light);
+    line-height:1;
+  }
+  .reviews-summary .avg-stars{ font-size:14px; color:var(--gold); margin-top:4px; }
+  .reviews-summary .avg-count{ font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .review-card{
+    display:flex; gap:10px; padding:14px 0; border-bottom:1px solid var(--line);
+  }
+  .review-card:last-child{ border-bottom:none; }
+  .review-avatar{
+    width:34px; height:34px; border-radius:50%; overflow:hidden; flex-shrink:0;
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy);
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;
+  }
+  .review-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .review-body{ flex:1; min-width:0; }
+  .review-top-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .review-name{ font-size:13px; font-weight:700; color:var(--cream); }
+  .review-stars{ font-size:12px; color:var(--gold); margin-top:2px; }
+  .review-date{ font-size:10.5px; color:var(--muted); white-space:nowrap; }
+  .review-comment{ font-size:13px; color:var(--muted); margin-top:6px; line-height:1.5; }
+  .review-report-btn{
+    background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; flex-shrink:0;
+  }
+  .review-report-btn:hover{ color:var(--pink); }
+  .no-reviews-note{ text-align:center; color:var(--muted); font-size:13px; padding:16px 0; }
+
   .star-picker{ margin-top:20px; display:flex; justify-content:center; gap:8px; }
 
   .star-pick{ font-size:38px; color:var(--muted); cursor:pointer; transition:color 0.15s ease, transform 0.15s ease; }
@@ -1220,6 +1254,12 @@
       <p id="detailDesc" style="color:var(--muted); font-size:14px; line-height:1.6;"></p>
       <div class="contact-row" id="detailActions" style="margin-top:16px;"></div>
       <button class="report-link" id="reportAdBtn">🚩 Report This Ad</button>
+
+      <div class="reviews-section" id="reviewsSection">
+        <h3 style="font-size:16px; margin-bottom:12px;">⭐ Reviews & Ratings</h3>
+        <div class="reviews-summary" id="reviewsSummary"></div>
+        <div class="reviews-list" id="reviewsList"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1286,6 +1326,10 @@
       <span class="star-pick" data-val="3">☆</span>
       <span class="star-pick" data-val="4">☆</span>
       <span class="star-pick" data-val="5">☆</span>
+    </div>
+    <div class="field" style="text-align:left; margin-top:16px;">
+      <label for="ratingComment">Review Likhein (optional)</label>
+      <textarea id="ratingComment" rows="3" placeholder="Apna tajurba batayein..."></textarea>
     </div>
     <button class="btn-primary" id="submitRatingBtn" style="width:100%; margin-top:20px;">Rating Submit Karein</button>
   </div>
@@ -2875,6 +2919,7 @@
     }
 
     document.getElementById('detailModalOverlay').classList.add('show');
+    loadAndRenderReviews(p);
   }
   document.getElementById('closeDetailBtn').addEventListener('click', ()=>{
     document.getElementById('detailModalOverlay').classList.remove('show');
@@ -3042,11 +3087,32 @@
   let selectedRatingValue = 0;
   const ratingModalOverlay = document.getElementById('ratingModalOverlay');
 
-  function openRatingModal(p){
+  async function hasChatHistoryWithSeller(sellerId){
+    if(!sb || !currentUser || !sharedWorking) return false;
+    try{
+      const { data, error } = await sb.from('messages')
+        .select('id')
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${sellerId}),and(sender_id.eq.${sellerId},receiver_id.eq.${currentUser.id})`)
+        .limit(1);
+      if(error) throw error;
+      return !!(data && data.length > 0);
+    }catch(e){ console.warn('Chat history check failed:', e); return false; }
+  }
+
+  async function openRatingModal(p){
     if(!currentUser){ alert('Rate karne ke liye pehle Login karein.'); openAuth(); return; }
+    if(!p.seller_id){ return; }
+
+    const eligible = await hasChatHistoryWithSeller(p.seller_id);
+    if(!eligible){
+      showToast('Reviews dene ke liye pehle seller se chat par baat karein');
+      return;
+    }
+
     ratingTargetProduct = p;
     selectedRatingValue = 0;
     document.getElementById('ratingSellerName').textContent = p.seller_name || 'Seller';
+    document.getElementById('ratingComment').value = '';
     updateStarPicker();
     ratingModalOverlay.classList.add('show');
   }
@@ -3075,6 +3141,7 @@
       alert('Barah-e-karam sitare (stars) select karein.');
       return;
     }
+    const comment = document.getElementById('ratingComment').value.trim();
     const btn = document.getElementById('submitRatingBtn');
     btn.disabled = true;
     btn.textContent = 'Submit ho raha hai...';
@@ -3083,12 +3150,16 @@
       const { error } = await sb.from('seller_ratings').upsert([{
         seller_id: ratingTargetProduct.seller_id,
         buyer_id: currentUser.id,
-        rating_value: selectedRatingValue
+        rating_value: selectedRatingValue,
+        comment: comment || null,
+        buyer_name: currentUser.name,
+        buyer_avatar: currentUser.avatar_url || null
       }], { onConflict: 'seller_id,buyer_id' });
       if(error) throw error;
 
       await loadSellerRatings();
       renderProducts();
+      loadAndRenderReviews(ratingTargetProduct);
       ratingModalOverlay.classList.remove('show');
       showToast('Rating submit ho gayi, shukriya!');
     }catch(e){
@@ -3099,6 +3170,93 @@
     btn.disabled = false;
     btn.textContent = 'Rating Submit Karein';
   });
+
+  // ---------- Reviews List (Play Store style) ----------
+  async function loadAndRenderReviews(p){
+    const summaryEl = document.getElementById('reviewsSummary');
+    const listEl = document.getElementById('reviewsList');
+    if(!p.seller_id || !sharedWorking || !sb){
+      summaryEl.innerHTML = '';
+      listEl.innerHTML = '<div class="no-reviews-note">Reviews available nahi hain.</div>';
+      return;
+    }
+    summaryEl.innerHTML = '<div class="no-reviews-note">Load ho raha hai...</div>';
+    listEl.innerHTML = '';
+
+    try{
+      const { data, error } = await sb.from('seller_ratings')
+        .select('*')
+        .eq('seller_id', p.seller_id)
+        .order('created_at', { ascending:false });
+      if(error) throw error;
+
+      const reviews = data || [];
+      if(reviews.length === 0){
+        summaryEl.innerHTML = '';
+        listEl.innerHTML = '<div class="no-reviews-note">Abhi koi review nahi hai — pehla review aap de sakte hain!</div>';
+        return;
+      }
+
+      const avg = reviews.reduce((s,r)=> s + r.rating_value, 0) / reviews.length;
+      const fullStars = Math.round(avg);
+      summaryEl.innerHTML = `
+        <div class="avg-score">${avg.toFixed(1)}</div>
+        <div>
+          <div class="avg-stars">${'★'.repeat(fullStars)}${'☆'.repeat(5-fullStars)}</div>
+          <div class="avg-count">${reviews.length} review${reviews.length > 1 ? 's' : ''}</div>
+        </div>`;
+
+      listEl.innerHTML = reviews.map(r=>{
+        const initial = (r.buyer_name || '?').charAt(0).toUpperCase();
+        const avatarHtml = r.buyer_avatar ? `<img src="${r.buyer_avatar}">` : initial;
+        const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+        const stars = '★'.repeat(r.rating_value) + '☆'.repeat(5 - r.rating_value);
+        return `
+        <div class="review-card">
+          <div class="review-avatar">${avatarHtml}</div>
+          <div class="review-body">
+            <div class="review-top-row">
+              <div>
+                <div class="review-name">${r.buyer_name || 'User'}</div>
+                <div class="review-stars">${stars}</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="review-date">${dateStr}</div>
+                <button class="review-report-btn" data-reviewid="${r.id}" data-pid="${p.id}" title="Report fake review">🚩</button>
+              </div>
+            </div>
+            ${r.comment ? `<div class="review-comment">${escapeHtml(r.comment)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      listEl.querySelectorAll('.review-report-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=> reportReview(btn.dataset.reviewid, btn.dataset.pid));
+      });
+    }catch(e){
+      console.warn('Reviews load failed:', e);
+      summaryEl.innerHTML = '';
+      listEl.innerHTML = '<div class="no-reviews-note">Reviews load nahi ho sake.</div>';
+    }
+  }
+
+  async function reportReview(reviewId, productId){
+    if(!currentUser){ alert('Report karne ke liye pehle Login karein.'); openAuth(); return; }
+    if(!confirm('Ye review fake/inappropriate lagta hai? Report karna chahte hain?')) return;
+    try{
+      const { error } = await sb.from('reports').insert([{
+        product_id: productId ? Number(productId) : null,
+        reporter_id: currentUser.id,
+        reason: 'Fake Review',
+        review_id: reviewId ? Number(reviewId) : null
+      }]);
+      if(error) throw error;
+      showToast('Review report ho gayi, shukriya.');
+    }catch(e){
+      alert('Report submit nahi ho saki.\nWajah: ' + (e.message || JSON.stringify(e)));
+      console.error(e);
+    }
+  }
 
 
   // Auto-open a product if shared link is opened (?product=ID)
