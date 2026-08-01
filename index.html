@@ -691,6 +691,7 @@
     z-index:100; padding:20px;
   }
   .modal-overlay.show{ display:flex; }
+  #cityPickerOverlay{ z-index:99999 !important; }
   .modal{
     background:var(--navy2);
     border:1px solid var(--line);
@@ -743,6 +744,20 @@
     border-top:1px solid var(--line);
   }
   footer b{ color:var(--gold-light); }
+  .footer-links{ margin-top:10px; display:flex; justify-content:center; gap:10px; align-items:center; }
+  .footer-links a{ color:var(--teal); text-decoration:underline; font-size:12px; }
+  .footer-links a:hover{ color:var(--gold-light); }
+  .footer-links span{ color:var(--line); }
+
+  .legal-modal{ max-width:440px; }
+  .legal-list{ list-style:none; margin-top:16px; display:flex; flex-direction:column; gap:12px; }
+  .legal-list li{
+    font-size:13px; color:var(--cream); line-height:1.5; padding-left:18px; position:relative;
+  }
+  .legal-list li::before{
+    content:"•"; position:absolute; left:0; color:var(--gold); font-weight:700;
+  }
+  .legal-list li b{ color:var(--gold-light); }
 
   @media (max-width:780px){
     .hero{ grid-template-columns:1fr; padding-top:36px; }
@@ -981,7 +996,47 @@
 
 <footer>
   <b>DFS — Duty Free Shop</b> · Contact: 0336-8345678 (Call / WhatsApp) · Aapke apne products aap khud list karein.
+  <div class="footer-links">
+    <a href="#" id="openTermsBtn">Terms & Conditions</a>
+    <span>·</span>
+    <a href="#" id="openPrivacyBtn">Privacy Policy</a>
+  </div>
 </footer>
+
+<!-- Terms & Conditions Modal -->
+<div class="modal-overlay" id="termsModalOverlay">
+  <div class="modal legal-modal">
+    <button class="close-x" id="closeTermsBtn">✕</button>
+    <h3>📜 Terms & Conditions</h3>
+    <p class="sub">DFS - Duty Free Shop istemal karne se pehle ye points parh lein</p>
+    <ul class="legal-list">
+      <li>DFS ek <b>open marketplace</b> hai — koi bhi login kar ke apna product list kar sakta hai aur khareed sakta hai.</li>
+      <li>Har listing us seller ki apni zimmedari hai — DFS sirf platform faraham karta hai, khud koi product nahi baichta.</li>
+      <li>Payment aur delivery seedha <b>buyer aur seller ke darmiyan</b> (Call/WhatsApp par) tay hoti hai — DFS iska hissa nahi hai.</li>
+      <li>Ghalat, jaali, ya ghair-qanooni product list karna mana hai — aisi ads 🚩 Report ki ja sakti hain aur hata di jayengi.</li>
+      <li>Har user apni account details (password, login) khud mehfooz rakhne ka zimmedar hai.</li>
+      <li>DFS kisi bhi waqt koi listing, account, ya feature tabdeel ya band karne ka haq rakhta hai.</li>
+      <li>Kisi bhi deal se pehle product, seller, aur payment tareeqe ko khud achi tarah check kar lein.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div class="modal-overlay" id="privacyModalOverlay">
+  <div class="modal legal-modal">
+    <button class="close-x" id="closePrivacyBtn">✕</button>
+    <h3>🔒 Privacy Policy</h3>
+    <p class="sub">Aapki maloomat kaise mehfooz aur istemal hoti hai</p>
+    <ul class="legal-list">
+      <li>Signup ke waqt sirf <b>naam, email, aur password</b> liya jata hai — koi extra personal detail nahi mangi jati.</li>
+      <li>Aapka contact number sirf tab dikhta hai jab aap khud apni listing mein daalein (buyers ke sath share karne ke liye).</li>
+      <li>Chat messages sirf aap aur doosre user ke darmiyan hote hain — DFS unhein kisi teesre ko nahi deta.</li>
+      <li>Profile picture aur naam sirf aapki apni listings ke sath dikhaye jate hain, taake buyers seller ko pehchan sakein.</li>
+      <li>Aapka data kisi bhi advertiser ya teesri party ko becha ya share nahi kiya jata.</li>
+      <li>Aap apni profile, products, ya account kabhi bhi khud delete/update kar sakte hain.</li>
+    </ul>
+  </div>
+</div>
 
 <!-- Auth Modal -->
 <div class="modal-overlay" id="authModalOverlay">
@@ -2612,6 +2667,22 @@
   document.getElementById('cityFilterBtn').addEventListener('click', ()=> openCityPicker('filter'));
   document.getElementById('pCityBtn').addEventListener('click', ()=> openCityPicker('sell'));
   document.getElementById('editCityBtn').addEventListener('click', ()=> openCityPicker('edit'));
+
+  // ---------- Terms & Privacy Modals ----------
+  document.getElementById('openTermsBtn').addEventListener('click', (e)=>{
+    e.preventDefault();
+    document.getElementById('termsModalOverlay').classList.add('show');
+  });
+  document.getElementById('closeTermsBtn').addEventListener('click', ()=>{
+    document.getElementById('termsModalOverlay').classList.remove('show');
+  });
+  document.getElementById('openPrivacyBtn').addEventListener('click', (e)=>{
+    e.preventDefault();
+    document.getElementById('privacyModalOverlay').classList.add('show');
+  });
+  document.getElementById('closePrivacyBtn').addEventListener('click', ()=>{
+    document.getElementById('privacyModalOverlay').classList.remove('show');
+  });
 
   function populateCategoryDropdowns(){
     const catSelect = document.getElementById('pCat');
