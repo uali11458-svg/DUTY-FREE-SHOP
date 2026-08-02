@@ -6,5 +6,12 @@
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "description": "DFS Duty Free Shop - Bechein bhi, khareedein bhi",
-  "icons": []
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
