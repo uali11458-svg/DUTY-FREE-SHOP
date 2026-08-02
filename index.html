@@ -872,6 +872,15 @@
   }
   .legal-list li b{ color:var(--gold-light); }
   .about-link{ color:var(--teal); text-decoration:underline; font-weight:600; }
+  .about-modal{ text-align:center; }
+  .about-brand-badge{
+    width:56px; height:56px; margin:0 auto 12px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-light));
+    color:var(--navy); border-radius:16px;
+    display:flex; align-items:center; justify-content:center; font-size:26px;
+  }
+  .about-modal h3{ letter-spacing:1px; }
+  .about-list{ text-align:left; }
   .about-link:hover{ color:var(--gold-light); }
 
   @media (max-width:780px){
@@ -1122,16 +1131,13 @@
 
 <!-- About Us Modal -->
 <div class="modal-overlay" id="aboutModalOverlay">
-  <div class="modal legal-modal">
+  <div class="modal legal-modal about-modal">
     <button class="close-x" id="closeAboutBtn">✕</button>
-    <h3>ℹ️ About Us</h3>
-    <p class="sub">DFS - Duty Free Shop ke baare mein</p>
-    <ul class="legal-list">
-      <li><b>Website Owner:</b> Ali Akbar</li>
-      <li><b>Father Name:</b> Ubaid Ali</li>
-      <li><b>Website Developer:</b> Ali Akbar</li>
-      <li><b>Founder of:</b> MATRIX STUDIOS</li>
-      <li><b>Website Partner:</b> M. Jawad</li>
+    <div class="about-brand-badge">🛍️</div>
+    <h3>PROJECT OF DUTY FREE SHOP</h3>
+    <p class="sub">Developed and managed by <b>MATRIX STUDIOS</b></p>
+    <ul class="legal-list about-list">
+      <li><b>Contact Support / Helpline:</b> 0336-8345678</li>
       <li><b>LinkedIn:</b> <a href="https://www.linkedin.com/in/matrix-studios-388972412" target="_blank" class="about-link">Matrix Studios LinkedIn</a></li>
     </ul>
   </div>
