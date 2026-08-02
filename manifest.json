@@ -1,0 +1,10 @@
+{
+  "name": "Duty Free Shop",
+  "short_name": "Duty Free",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "description": "DFS Duty Free Shop - Bechein bhi, khareedein bhi",
+  "icons": []
+}
