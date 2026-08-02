@@ -1,11 +1,16 @@
 {
+  "id": "/",
   "name": "Duty Free Shop",
   "short_name": "Duty Free",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "description": "DFS Duty Free Shop - Bechein bhi, khareedein bhi",
+  "lang": "en",
+  "categories": ["shopping", "lifestyle"],
   "icons": [
     {
       "src": "https://img.icons8.com/clouds/512/shopping-bag.png",
