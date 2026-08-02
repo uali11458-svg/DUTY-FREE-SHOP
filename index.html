@@ -943,7 +943,11 @@
     .search-icon{ left:12px; font-size:13px; }
 
     /* Hide/compact non-essential header items on mobile — moved to bottom nav or hidden */
-    .city-filter-select{ display:none; }
+    .city-filter-select{
+      display:inline-flex !important; align-items:center; gap:4px;
+      padding:8px 12px; font-size:11.5px; order:2; max-width:44vw;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
     .chats-btn{ display:none !important; }
     .sell-btn{ display:none; }
     .theme-toggle-btn{ width:34px; height:34px; font-size:14px; }
@@ -1598,14 +1602,41 @@
   ];
 
   const PAKISTAN_CITIES = [
-    "Karachi", "Lahore", "Islamabad", "Rawalpindi", "Peshawar", "Quetta", "Multan", "Faisalabad",
-    "Sialkot", "Gujranwala", "Hyderabad", "Sukkur", "Larkana", "Abbottabad", "Mardan", "Bahawalpur",
-    "Sargodha", "Mirpur (AJK)", "Gilgit", "Skardu", "Sahiwal", "Sheikhupura", "Rahim Yar Khan", "Jhang",
-    "Gujrat", "Kasur", "Okara", "Mingora (Swat)", "Nawabshah", "Dera Ghazi Khan", "Dera Ismail Khan",
-    "Chiniot", "Kamoke", "Hafizabad", "Muzaffarabad", "Kotli", "Turbat", "Gwadar", "Khuzdar", "Chaman",
-    "Jacobabad", "Mianwali", "Attock", "Chakwal", "Jhelum", "Kohat", "Bannu", "Swabi", "Nowshera",
-    "Charsadda", "Vehari", "Khanewal", "Muzaffargarh", "Layyah", "Toba Tek Singh", "Mandi Bahauddin",
-    "Narowal", "Pakpattan", "Other Pakistan City"
+    // Major cities
+    "Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Multan", "Gujranwala",
+    "Peshawar", "Quetta", "Hyderabad", "Sialkot", "Sargodha", "Bahawalpur", "Sukkur",
+    // Punjab
+    "Sheikhupura", "Jhang", "Rahim Yar Khan", "Gujrat", "Kasur", "Sahiwal", "Okara",
+    "Wah Cantt", "Dera Ghazi Khan", "Mianwali", "Muzaffargarh", "Vehari", "Chiniot",
+    "Kamoke", "Hafizabad", "Jhelum", "Attock", "Khanewal", "Toba Tek Singh",
+    "Mandi Bahauddin", "Narowal", "Pakpattan", "Bahawalnagar", "Burewala", "Chishtian",
+    "Chunian", "Daska", "Depalpur", "Ferozewala", "Gojra", "Haroonabad", "Hasilpur",
+    "Jaranwala", "Jatoi", "Kabirwala", "Kamalia", "Kot Addu", "Lalamusa", "Liaquatpur",
+    "Mailsi", "Mian Channu", "Murree", "Muridke", "Nankana Sahib", "Pattoki", "Phalia",
+    "Pindi Bhattian", "Renala Khurd", "Sadiqabad", "Samundri", "Sarai Alamgir",
+    "Shakargarh", "Shorkot", "Tandlianwala", "Taunsa", "Wazirabad", "Yazman", "Zafarwal",
+    "Arifwala", "Ahmedpur East", "Chak Jhumra", "Kharian", "Malakwal", "Manga Mandi",
+    "Raiwind", "Layyah", "Chakwal",
+    // Sindh
+    "Larkana", "Nawabshah (Shaheed Benazirabad)", "Mirpur Khas", "Jacobabad", "Shikarpur",
+    "Dadu", "Thatta", "Badin", "Tando Adam", "Tando Allahyar", "Tando Muhammad Khan",
+    "Ghotki", "Khairpur", "Kashmore", "Kandhkot", "Naushahro Feroze", "Matiari",
+    "Sanghar", "Umerkot", "Mithi", "Jamshoro", "Kotri", "Ranipur", "Moro",
+    "Pano Aqil", "Rohri",
+    // Khyber Pakhtunkhwa
+    "Mardan", "Abbottabad", "Mingora (Swat)", "Kohat", "Dera Ismail Khan", "Bannu",
+    "Nowshera", "Charsadda", "Swabi", "Haripur", "Chitral", "Batagram", "Buner",
+    "Upper Dir", "Lower Dir", "Hangu", "Karak", "Kohistan", "Lakki Marwat", "Malakand",
+    "Shangla", "Tank", "Torghar", "Mansehra", "Timergara",
+    // Balochistan
+    "Gwadar", "Turbat", "Khuzdar", "Sibi", "Chaman", "Zhob", "Dera Murad Jamali",
+    "Loralai", "Nushki", "Kalat", "Mastung", "Pasni", "Panjgur", "Usta Muhammad",
+    "Hub", "Kharan", "Barkhan", "Dalbandin",
+    // Azad Kashmir
+    "Mirpur (AJK)", "Muzaffarabad", "Rawalakot", "Kotli", "Bagh", "Bhimber", "Palandri",
+    // Gilgit-Baltistan
+    "Gilgit", "Skardu", "Hunza", "Chilas", "Ghanche", "Astore",
+    "Other Pakistan City"
   ];
 
   const categoryStructure = {
