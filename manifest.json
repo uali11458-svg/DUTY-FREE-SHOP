@@ -13,8 +13,7 @@
   "categories": ["shopping", "lifestyle"],
   "icons": [
     {
-      "src": "https://img.icons8.com/clouds/512/shopping-bag.png",
-      "sizes": "512x512",
+"src": "icon.png",      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
