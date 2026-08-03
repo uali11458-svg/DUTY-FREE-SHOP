@@ -465,6 +465,17 @@
     cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
   }
   .account-tab.active{ color:var(--gold-light); border-bottom-color:var(--gold); }
+  .settings-block{ margin-top:16px; }
+  .lang-toggle-group{ display:flex; gap:10px; }
+  .lang-toggle-btn{
+    flex:1; padding:14px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--panel); color:var(--cream); font-family:'Poppins'; font-weight:600; font-size:13.5px;
+    cursor:pointer; transition:all 0.15s ease;
+  }
+  .lang-toggle-btn:hover{ border-color:var(--gold); }
+  .lang-toggle-btn.active{
+    background:linear-gradient(135deg, var(--gold), var(--gold-light)); color:var(--navy); border-color:transparent;
+  }
   .avatar-upload-wrap{ position:relative; display:inline-block; }
   .avatar-preview{
     width:84px; height:84px; border-radius:50%; overflow:hidden;
@@ -1061,28 +1072,28 @@
     <div class="logo">DFS<small>DUTY FREE SHOP</small></div>
     <div class="search-box">
       <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Products dhoondein — jese 'kurti', 'mobile', 'shoes'...">
+      <input type="text" id="searchInput" data-i18n-placeholder="searchPlaceholder" placeholder="Products dhoondein — jese 'kurti', 'mobile', 'shoes'...">
       <button id="searchClearBtn" style="display:none;">✕</button>
     </div>
-    <button type="button" id="cityFilterBtn" class="city-filter-select">🌍 All Pakistan</button>
+    <button type="button" id="cityFilterBtn" class="city-filter-select" data-i18n="allPakistan">🌍 All Pakistan</button>
     <input type="hidden" id="cityFilterSelect" value="All">
     <button class="theme-toggle-btn" id="themeToggleBtn" title="Dark/Light Mode">🌙</button>
-    <button class="chats-btn" id="openInboxBtn" style="display:none;">💬 Mera Chat</button>
+    <button class="chats-btn" id="openInboxBtn" style="display:none;" data-i18n="merChat">💬 Mera Chat</button>
     <div id="authArea">
-      <button class="login-btn" id="openAuthBtn">👤 Login / Signup</button>
+      <button class="login-btn" id="openAuthBtn" data-i18n="loginSignup">👤 Login / Signup</button>
     </div>
-    <button class="sell-btn" id="openSellBtn">+ Apna Product Bechein</button>
+    <button class="sell-btn" id="openSellBtn" data-i18n="sellBtn">+ Apna Product Bechein</button>
   </div>
 </header>
 
 <section class="hero">
   <div>
-    <h1>Bechein Bhi,<br><span class="gold-text">Khareedein Bhi</span> — Yahan Sab Kuch</h1>
-    <p>DFS Duty Free Shop ek khula bazaar hai — koi bhi apna product list kare, koi bhi khareede. Seedha call ya WhatsApp par baat karein, koi jhanjhat nahi.</p>
+    <h1><span data-i18n="heroLine1">Bechein Bhi,</span><br><span class="gold-text" data-i18n="heroLine2">Khareedein Bhi</span> <span data-i18n="heroLine3">— Yahan Sab Kuch</span></h1>
+    <p data-i18n="heroDesc">DFS Duty Free Shop ek khula bazaar hai — koi bhi apna product list kare, koi bhi khareede. Seedha call ya WhatsApp par baat karein, koi jhanjhat nahi.</p>
     <div class="hero-tags">
-      <span class="hero-tag">📞 Direct Contact</span>
-      <span class="hero-tag">🔎 Instant Search</span>
-      <span class="hero-tag">🛍️ Sab Categories</span>
+      <span class="hero-tag" data-i18n="tagContact">📞 Direct Contact</span>
+      <span class="hero-tag" data-i18n="tagSearch">🔎 Instant Search</span>
+      <span class="hero-tag" data-i18n="tagCategories">🛍️ Sab Categories</span>
     </div>
   </div>
   <div class="scene">
@@ -1104,17 +1115,17 @@
     <input type="number" id="minPriceInput" placeholder="Min Rs" min="0">
     <span>—</span>
     <input type="number" id="maxPriceInput" placeholder="Max Rs" min="0">
-    <button id="applyPriceBtn" class="apply-price-btn">Filter</button>
+    <button id="applyPriceBtn" class="apply-price-btn" data-i18n="filterBtn">Filter</button>
     <button id="clearPriceBtn" class="clear-price-btn" style="display:none;">✕</button>
   </div>
   <select id="subcatFilterSelect" class="sort-select" style="display:none;">
     <option value="All">Sab Sub-Categories</option>
   </select>
   <select id="sortSelect" class="sort-select">
-    <option value="newest">Sort: Newest</option>
-    <option value="price_asc">Price: Low to High</option>
-    <option value="price_desc">Price: High to Low</option>
-    <option value="most_viewed">Most Viewed</option>
+    <option value="newest" data-i18n="sortNewest">Sort: Newest</option>
+    <option value="price_asc" data-i18n="sortPriceAsc">Price: Low to High</option>
+    <option value="price_desc" data-i18n="sortPriceDesc">Price: High to Low</option>
+    <option value="most_viewed" data-i18n="sortMostViewed">Most Viewed</option>
   </select>
 </div>
 
@@ -1124,13 +1135,13 @@
 </section>
 
 <footer>
-  <b>DFS — Duty Free Shop</b> · Contact: 0336-8345678 (Call / WhatsApp) · Aapke apne products aap khud list karein.
+  <b>DFS — Duty Free Shop</b> · Contact: 0336-8345678 (Call / WhatsApp) · <span data-i18n="footerTagline">Aapke apne products aap khud list karein.</span>
   <div class="footer-links">
-    <a href="#" id="openAboutBtn">About Us</a>
+    <a href="#" id="openAboutBtn" data-i18n="aboutUsLink">About Us</a>
     <span>·</span>
-    <a href="#" id="openTermsBtn">Terms & Conditions</a>
+    <a href="#" id="openTermsBtn" data-i18n="termsLink">Terms & Conditions</a>
     <span>·</span>
-    <a href="#" id="openPrivacyBtn">Privacy Policy</a>
+    <a href="#" id="openPrivacyBtn" data-i18n="privacyLink">Privacy Policy</a>
   </div>
 </footer>
 
@@ -1191,17 +1202,17 @@
     <p class="sub" id="authSub">Apna account access karein</p>
 
     <div class="field" id="authNameField" style="display:none;">
-      <label for="authName">Aapka Naam</label>
+      <label for="authName" data-i18n="yourName">Aapka Naam</label>
       <input type="text" id="authName" placeholder="Jese: Ali Khan">
     </div>
 
     <div class="field">
-      <label for="authEmail">Email</label>
+      <label for="authEmail" data-i18n="email">Email</label>
       <input type="email" id="authEmail" placeholder="aap@example.com">
     </div>
 
     <div class="field">
-      <label for="authPassword">Password</label>
+      <label for="authPassword" data-i18n="password">Password</label>
       <input type="password" id="authPassword" placeholder="Kam az kam 6 harf">
     </div>
 
@@ -1220,11 +1231,12 @@
 <div class="modal-overlay" id="accountModalOverlay">
   <div class="modal" style="max-width:460px;">
     <button class="close-x" id="closeAccountBtn">✕</button>
-    <h3>Mera Account</h3>
+    <h3 data-i18n="myAccount">Mera Account</h3>
     <div class="account-tabs">
-      <button class="account-tab active" data-tab="profile">Profile</button>
-      <button class="account-tab" data-tab="cart">🛒 Cart</button>
-      <button class="account-tab" data-tab="myads">📦 My Ads</button>
+      <button class="account-tab active" data-tab="profile" data-i18n="profileTab">Profile</button>
+      <button class="account-tab" data-tab="cart">🛒 <span data-i18n="cartTab">Cart</span></button>
+      <button class="account-tab" data-tab="myads">📦 <span data-i18n="myAdsTabLabel">My Ads</span></button>
+      <button class="account-tab" data-tab="settings">⚙️ <span data-i18n="settingsTab">Settings</span></button>
     </div>
 
     <div id="profileTab">
@@ -1287,6 +1299,17 @@
         <a class="vip-order-btn" id="vipShowcaseBtn" target="_blank" href="#">📩 WhatsApp Par Order Karein</a>
       </div>
       <div id="myAdsItems" style="margin-top:14px;"></div>
+    </div>
+
+    <div id="settingsTabContent" style="display:none;">
+      <div class="settings-block">
+        <h3 style="font-size:15px;" data-i18n="languageSetting">Language Setting</h3>
+        <p class="sub" style="margin-bottom:14px;" data-i18n="languageSettingDesc">Website ki language chunein</p>
+        <div class="lang-toggle-group">
+          <button class="lang-toggle-btn" id="langUrduBtn" data-lang="ur">🇵🇰 Roman Urdu</button>
+          <button class="lang-toggle-btn" id="langEnglishBtn" data-lang="en">🇬🇧 English</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1366,10 +1389,10 @@
       <div class="stats-line" id="detailStats" style="margin-bottom:10px;"></div>
       <p id="detailDesc" style="color:var(--muted); font-size:14px; line-height:1.6;"></p>
       <div class="contact-row" id="detailActions" style="margin-top:16px;"></div>
-      <button class="report-link" id="reportAdBtn">🚩 Report This Ad</button>
+      <button class="report-link" id="reportAdBtn" data-i18n="reportAd">🚩 Report This Ad</button>
 
       <div class="reviews-section" id="reviewsSection">
-        <h3 style="font-size:16px; margin-bottom:12px;">⭐ Reviews & Ratings</h3>
+        <h3 style="font-size:16px; margin-bottom:12px;" data-i18n="reviewsTitle">⭐ Reviews & Ratings</h3>
         <div class="reviews-summary" id="reviewsSummary"></div>
         <div class="reviews-list" id="reviewsList"></div>
       </div>
@@ -1523,66 +1546,66 @@
 <div class="modal-overlay" id="sellModalOverlay">
   <div class="modal">
     <button class="close-x" id="closeSellBtn">✕</button>
-    <h3>Apna Product List Karein</h3>
-    <p class="sub">Details bharein, product turant website par nazar aayega</p>
+    <h3 data-i18n="sellFormTitle">Apna Product List Karein</h3>
+    <p class="sub" data-i18n="sellFormSub">Details bharein, product turant website par nazar aayega</p>
 
     <div class="field">
-      <label for="pName">Product Ka Naam</label>
+      <label for="pName" data-i18n="productName">Product Ka Naam</label>
       <input type="text" id="pName" placeholder="Jese: Lawn Print Kurti">
     </div>
 
     <div class="field">
-      <label for="pCat">Main Category</label>
+      <label for="pCat" data-i18n="mainCategory">Main Category</label>
       <select id="pCat">
         <option value="">-- Category Chunein --</option>
       </select>
     </div>
 
     <div class="field">
-      <label for="pSubcat">Sub-Category</label>
+      <label for="pSubcat" data-i18n="subCategory">Sub-Category</label>
       <select id="pSubcat" disabled>
         <option value="">-- Pehle Main Category Chunein --</option>
       </select>
     </div>
 
     <div class="field">
-      <label for="pCondition">Product Ki Halat</label>
+      <label for="pCondition" data-i18n="productCondition">Product Ki Halat</label>
       <select id="pCondition">
-        <option value="New">New</option>
-        <option value="Used">Used</option>
+        <option value="New" data-i18n="newLabel">New</option>
+        <option value="Used" data-i18n="usedLabel">Used</option>
       </select>
     </div>
 
     <div class="field">
-      <label for="pCityBtn">Shehar (City)</label>
+      <label for="pCityBtn" data-i18n="city">Shehar (City)</label>
       <button type="button" id="pCityBtn" class="city-field-btn">Karachi</button>
       <input type="hidden" id="pCity" value="Karachi">
     </div>
 
     <div class="field">
-      <label for="pPrice">Price (Rs)</label>
+      <label for="pPrice" data-i18n="price">Price (Rs)</label>
       <input type="number" id="pPrice" placeholder="Jese: 1500">
     </div>
 
     <div class="field">
-      <label for="pDesc">Description</label>
+      <label for="pDesc" data-i18n="description">Description</label>
       <textarea id="pDesc" rows="3" placeholder="Product ke baare mein thori tafseel likhein"></textarea>
     </div>
 
     <div class="field">
-      <label for="pImage">Product Ki Tasveer</label>
+      <label for="pImage" data-i18n="productImage">Product Ki Tasveer</label>
       <input type="file" id="pImage" accept="image/*" multiple>
-      <div class="img-preview" id="imgPreview" style="height:auto;min-height:100px;flex-wrap:wrap;gap:8px;padding:10px;">Koi tasveer nahi chuni gayi</div>
+      <div class="img-preview" id="imgPreview" style="height:auto;min-height:100px;flex-wrap:wrap;gap:8px;padding:10px;" data-i18n="noImageChosen">Koi tasveer nahi chuni gayi</div>
     </div>
 
     <div class="field">
-      <label for="pPhone">Contact Number (Call/WhatsApp)</label>
+      <label for="pPhone" data-i18n="contactNumber">Contact Number (Call/WhatsApp)</label>
       <input type="text" id="pPhone" placeholder="03XX-XXXXXXX" value="0336-8345678">
     </div>
 
     <div class="modal-actions">
-      <button class="btn-ghost" id="cancelSellBtn">Cancel</button>
-      <button class="btn-primary" id="submitSellBtn">Product Add Karein</button>
+      <button class="btn-ghost" id="cancelSellBtn" data-i18n="cancel">Cancel</button>
+      <button class="btn-primary" id="submitSellBtn" data-i18n="addProduct">Product Add Karein</button>
     </div>
   </div>
 </div>
@@ -1601,6 +1624,138 @@
     {id:7, name:"Men's Casual Kurta", cat:"Fashion", price:1899, desc:"Comfortable cotton kurta, roz mara pehnne ke liye.", emoji:"👕", phone:DEFAULT_PHONE, image:null, custom:false},
     {id:8, name:"Power Bank 20000mAh", cat:"Electronics", price:2999, desc:"Fast charging, do devices ek sath charge karein.", emoji:"🔋", phone:DEFAULT_PHONE, image:null, custom:false},
   ];
+
+  // ---------- Language / Translation System ----------
+  const TRANSLATIONS = {
+    // Header
+    searchPlaceholder: { ur: "Products dhoondein — jese 'kurti', 'mobile', 'shoes'...", en: "Search products — e.g. 'kurti', 'mobile', 'shoes'..." },
+    allPakistan: { ur: "🌍 All Pakistan", en: "🌍 All Pakistan" },
+    loginSignup: { ur: "👤 Login / Signup", en: "👤 Login / Signup" },
+    merChat: { ur: "💬 Mera Chat", en: "💬 My Chat" },
+    sellBtn: { ur: "+ Apna Product Bechein", en: "+ Sell Your Product" },
+    logout: { ur: "Logout", en: "Logout" },
+    // Hero
+    heroLine1: { ur: "Bechein Bhi,", en: "Sell It," },
+    heroLine2: { ur: "Khareedein Bhi", en: "Buy It Too" },
+    heroLine3: { ur: "— Yahan Sab Kuch", en: "— Everything Here" },
+    heroDesc: { ur: "DFS Duty Free Shop ek khula bazaar hai — koi bhi apna product list kare, koi bhi khareede. Seedha call ya WhatsApp par baat karein, koi jhanjhat nahi.", en: "DFS Duty Free Shop is an open marketplace — anyone can list a product, anyone can buy. Talk directly over Call or WhatsApp, no hassle." },
+    tagContact: { ur: "📞 Direct Contact", en: "📞 Direct Contact" },
+    tagSearch: { ur: "🔎 Instant Search", en: "🔎 Instant Search" },
+    tagCategories: { ur: "🛍️ Sab Categories", en: "🛍️ All Categories" },
+    // Filter bar
+    sortNewest: { ur: "Sort: Newest", en: "Sort: Newest" },
+    sortPriceAsc: { ur: "Price: Low to High", en: "Price: Low to High" },
+    sortPriceDesc: { ur: "Price: High to Low", en: "Price: High to Low" },
+    sortMostViewed: { ur: "Most Viewed", en: "Most Viewed" },
+    filterBtn: { ur: "Filter", en: "Filter" },
+    allProducts: { ur: "Sab Products", en: "All Products" },
+    searchResultsFor: { ur: "ke natayej", en: "results for" },
+    productsWord: { ur: "Products", en: "Products" },
+    // Card buttons
+    callBtn: { ur: "📞 Call", en: "📞 Call" },
+    whatsappBtn: { ur: "💬 WhatsApp", en: "💬 WhatsApp" },
+    shareBtn: { ur: "🔗 Share", en: "🔗 Share" },
+    messageBtn: { ur: "💬 Message", en: "💬 Message" },
+    removeBtn: { ur: "Remove", en: "Remove" },
+    editBtn: { ur: "✏️ Edit", en: "✏️ Edit" },
+    deleteBtn: { ur: "🗑️ Delete", en: "🗑️ Delete" },
+    views: { ur: "views", en: "views" },
+    leads: { ur: "leads", en: "leads" },
+    newLabel: { ur: "New", en: "New" },
+    usedLabel: { ur: "Used", en: "Used" },
+    featuredLabel: { ur: "⭐ Featured", en: "⭐ Featured" },
+    // Account modal
+    myAccount: { ur: "Mera Account", en: "My Account" },
+    profileTab: { ur: "Profile", en: "Profile" },
+    cartTab: { ur: "Cart", en: "Cart" },
+    myAdsTabLabel: { ur: "My Ads", en: "My Ads" },
+    settingsTab: { ur: "Settings", en: "Settings" },
+    languageSetting: { ur: "Language Setting", en: "Language Setting" },
+    languageSettingDesc: { ur: "Website ki language chunein", en: "Choose the website language" },
+    saveProfile: { ur: "Profile Save Karein", en: "Save Profile" },
+    changePassword: { ur: "Password Update Karein", en: "Update Password" },
+    logoutBtn: { ur: "🚪 Logout / Sign Out", en: "🚪 Logout / Sign Out" },
+    // Empty states
+    emptyCart: { ur: "Cart abhi khali hai.", en: "Your cart is empty right now." },
+    emptyMyAds: { ur: "Aapne abhi koi product post nahi kiya.", en: "You haven't posted any product yet." },
+    emptyProducts: { ur: "Koi product nahi mila. Kuch aur keyword ya filter try karein.", en: "No products found. Try a different keyword or filter." },
+    loadingText: { ur: "Load ho raha hai...", en: "Loading..." },
+    // Footer
+    footerTagline: { ur: "Aapke apne products aap khud list karein.", en: "List your own products yourself." },
+    aboutUsLink: { ur: "About Us", en: "About Us" },
+    termsLink: { ur: "Terms & Conditions", en: "Terms & Conditions" },
+    privacyLink: { ur: "Privacy Policy", en: "Privacy Policy" },
+    // Auth modal
+    loginTitle: { ur: "Login Karein", en: "Log In" },
+    signupTitle: { ur: "Naya Account Banayein", en: "Create New Account" },
+    loginSubmitBtn: { ur: "Login Karein", en: "Log In" },
+    signupSubmitBtn: { ur: "Signup Karein", en: "Sign Up" },
+    yourName: { ur: "Aapka Naam", en: "Your Name" },
+    email: { ur: "Email", en: "Email" },
+    password: { ur: "Password", en: "Password" },
+    noAccount: { ur: "Account nahi hai?", en: "Don't have an account?" },
+    haveAccount: { ur: "Pehle se account hai?", en: "Already have an account?" },
+    signupLink: { ur: "Signup karein", en: "Sign up" },
+    loginLink: { ur: "Login karein", en: "Log in" },
+    // Sell form
+    sellFormTitle: { ur: "Apna Product List Karein", en: "List Your Product" },
+    sellFormSub: { ur: "Details bharein, product turant website par nazar aayega", en: "Fill in the details, your product will appear on the site instantly" },
+    noImageChosen: { ur: "Koi tasveer nahi chuni gayi", en: "No image selected" },
+    productName: { ur: "Product Ka Naam", en: "Product Name" },
+    mainCategory: { ur: "Main Category", en: "Main Category" },
+    subCategory: { ur: "Sub-Category", en: "Sub-Category" },
+    productCondition: { ur: "Product Ki Halat", en: "Product Condition" },
+    city: { ur: "Shehar (City)", en: "City" },
+    price: { ur: "Price (Rs)", en: "Price (Rs)" },
+    description: { ur: "Description", en: "Description" },
+    productImage: { ur: "Product Ki Tasveer", en: "Product Image" },
+    contactNumber: { ur: "Contact Number (Call/WhatsApp)", en: "Contact Number (Call/WhatsApp)" },
+    cancel: { ur: "Cancel", en: "Cancel" },
+    addProduct: { ur: "Product Add Karein", en: "Add Product" },
+    // Detail modal
+    reportAd: { ur: "🚩 Report This Ad", en: "🚩 Report This Ad" },
+    rateSeller: { ur: "⭐ Rate Seller", en: "⭐ Rate Seller" },
+    reviewsTitle: { ur: "⭐ Reviews & Ratings", en: "⭐ Reviews & Ratings" },
+  };
+
+  let currentLang = localStorage.getItem('dfs_lang') || 'ur';
+
+  function t(key){
+    const entry = TRANSLATIONS[key];
+    if(!entry) return key;
+    return entry[currentLang] || entry.ur || key;
+  }
+
+  function applyStaticTranslations(){
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const key = el.getAttribute('data-i18n');
+      el.textContent = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+      const key = el.getAttribute('data-i18n-placeholder');
+      el.placeholder = t(key);
+    });
+    document.documentElement.lang = currentLang === 'en' ? 'en' : 'ur-Latn';
+  }
+
+  function setLanguage(lang){
+    currentLang = lang;
+    try{ localStorage.setItem('dfs_lang', lang); }catch(e){}
+    applyStaticTranslations();
+    updateLangToggleButtons();
+    if(typeof authMode !== 'undefined') setAuthMode(authMode);
+    // re-render everything that has language-dependent dynamic text
+    renderCategories();
+    renderProducts();
+  }
+
+  function updateLangToggleButtons(){
+    const urBtn = document.getElementById('langUrduBtn');
+    const enBtn = document.getElementById('langEnglishBtn');
+    if(!urBtn || !enBtn) return;
+    urBtn.classList.toggle('active', currentLang === 'ur');
+    enBtn.classList.toggle('active', currentLang === 'en');
+  }
 
   const PAKISTAN_CITIES = [
     // Major cities
@@ -2071,10 +2226,12 @@
     // The chosen sort order above is still respected *within* each group (featured vs regular).
     filtered = [...filtered].sort((a,b)=> (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
 
-    shopTitle.textContent = searchTerm ? `"${searchTerm}" ke natayej (${filtered.length})` : (activeCat==="All" ? "Sab Products" : activeCat + " Products");
+    shopTitle.textContent = searchTerm
+      ? (currentLang === 'en' ? `${t('searchResultsFor')} "${searchTerm}" (${filtered.length})` : `"${searchTerm}" ${t('searchResultsFor')} (${filtered.length})`)
+      : (activeCat==="All" ? t('allProducts') : activeCat + " " + t('productsWord'));
 
     if(filtered.length === 0){
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">Koi product nahi mila. Kuch aur keyword ya filter try karein.</div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">${t('emptyProducts')}</div>`;
       return;
     }
 
@@ -2097,7 +2254,7 @@
       const sellerLine = p.seller_name
         ? `<div class="seller-line"><span class="seller-mini-avatar">${sellerAvatarHtml}</span>${p.seller_name}${verifiedBadgeHtml} · ${ratingBadge}</div>`
         : '';
-      const statsLine = p.custom ? `<div class="stats-line">👁 ${p.views || 0} views · 💬 ${p.leads || 0} leads</div>` : '';
+      const statsLine = p.custom ? `<div class="stats-line">👁 ${p.views || 0} ${t('views')} · 💬 ${p.leads || 0} ${t('leads')}</div>` : '';
       const canMessage = currentUser && p.custom && p.seller_id && !isOwner;
       const msgBtn = canMessage
         ? `<button class="contact-btn msg-seller-btn" data-msgid="${p.seller_id}" data-msgname="${p.seller_name || 'Seller'}" data-msgpid="${p.id}" data-msgpname="${p.name}">💬 Message</button>`
@@ -2110,9 +2267,9 @@
       <div class="card-holder">
         <a class="card ${p.is_featured ? 'card-featured' : ''}" href="?product=${p.id}" data-id="${p.id}">
           <div class="card-img ${p.is_featured ? 'has-ribbon' : ''}">
-            ${p.is_featured ? `<span class="featured-ribbon">⭐ Featured</span>` : ''}
+            ${p.is_featured ? `<span class="featured-ribbon">${t('featuredLabel')}</span>` : ''}
             <span class="card-tag">${p.cat}</span>
-            ${p.condition ? `<span class="condition-tag ${p.condition === 'New' ? 'cond-new' : 'cond-used'}">${p.condition}</span>` : ''}
+            ${p.condition ? `<span class="condition-tag ${p.condition === 'New' ? 'cond-new' : 'cond-used'}">${p.condition === 'New' ? t('newLabel') : t('usedLabel')}</span>` : ''}
             ${p.custom && isOwner ? `<button class="remove-tag" data-id="${String(p.id)}">Remove</button>` : ''}
             ${heartBtn}
             ${imgHtml}
@@ -2305,16 +2462,16 @@
     const toggleLink = document.getElementById('authToggleLink');
     if(mode === 'signup'){
       nameField.style.display = 'block';
-      title.textContent = 'Naya Account Banayein';
-      submitBtn.textContent = 'Signup Karein';
-      toggleText.textContent = 'Pehle se account hai?';
-      toggleLink.textContent = 'Login karein';
+      title.textContent = t('signupTitle');
+      submitBtn.textContent = t('signupSubmitBtn');
+      toggleText.textContent = t('haveAccount');
+      toggleLink.textContent = t('loginLink');
     } else {
       nameField.style.display = 'none';
-      title.textContent = 'Login Karein';
-      submitBtn.textContent = 'Login Karein';
-      toggleText.textContent = 'Account nahi hai?';
-      toggleLink.textContent = 'Signup karein';
+      title.textContent = t('loginTitle');
+      submitBtn.textContent = t('loginSubmitBtn');
+      toggleText.textContent = t('noAccount');
+      toggleLink.textContent = t('signupLink');
     }
   }
   document.getElementById('authToggleLink').addEventListener('click', (e)=>{
@@ -2430,6 +2587,8 @@
       performLogout();
     }
   });
+  document.getElementById('langUrduBtn').addEventListener('click', ()=> setLanguage('ur'));
+  document.getElementById('langEnglishBtn').addEventListener('click', ()=> setLanguage('en'));
 
   function updateAvatarPreview(){
     const el = document.getElementById('avatarPreview');
@@ -2468,6 +2627,7 @@
     document.getElementById('profileTab').style.display = which === 'profile' ? 'block' : 'none';
     document.getElementById('cartTab').style.display = which === 'cart' ? 'block' : 'none';
     document.getElementById('myAdsTab').style.display = which === 'myads' ? 'block' : 'none';
+    document.getElementById('settingsTabContent').style.display = which === 'settings' ? 'block' : 'none';
     if(which === 'cart') renderCartTab();
     if(which === 'myads') renderMyAdsTab();
   }
@@ -2813,7 +2973,7 @@
 
   function renderImgPreview(){
     if(selectedImages.length === 0){
-      imgPreview.innerHTML = 'Koi tasveer nahi chuni gayi';
+      imgPreview.innerHTML = t('noImageChosen');
       return;
     }
     imgPreview.innerHTML = selectedImages.map((img, i) =>
@@ -2973,6 +3133,8 @@
     });
   }
   populateCategoryDropdowns();
+  applyStaticTranslations();
+  updateLangToggleButtons();
 
   document.getElementById('pCat').addEventListener('change', (e)=>{
     const subSelect = document.getElementById('pSubcat');
@@ -3097,7 +3259,7 @@
     document.getElementById('detailCat').textContent = p.subcat ? `${p.cat} · ${p.subcat}` : p.cat;
     const condEl = document.getElementById('detailCondition');
     if(p.condition){
-      condEl.textContent = p.condition;
+      condEl.textContent = p.condition === 'New' ? t('newLabel') : t('usedLabel');
       condEl.className = 'condition-tag ' + (p.condition === 'New' ? 'cond-new' : 'cond-used');
       condEl.style.display = 'inline-block';
     } else {
@@ -3138,8 +3300,8 @@
       <a class="contact-btn call-btn" href="tel:${(p.phone||DEFAULT_PHONE).replace(/-/g,'')}">📞 Call</a>
       <a class="contact-btn wa-btn" target="_blank" href="https://wa.me/${waNum}?text=${waMsg}">💬 WhatsApp</a>
       <button class="contact-btn share-btn" id="detailShareBtn">🔗 Share</button>
-      ${canMessage ? `<button class="contact-btn msg-seller-btn" id="detailMsgBtn">💬 Message</button>` : ''}
-      ${canMessage ? `<button class="contact-btn" id="rateSellerBtn">⭐ Rate Seller</button>` : ''}
+      ${canMessage ? `<button class="contact-btn msg-seller-btn" id="detailMsgBtn">${t('messageBtn')}</button>` : ''}
+      ${canMessage ? `<button class="contact-btn" id="rateSellerBtn">${t('rateSeller')}</button>` : ''}
     `;
     document.getElementById('detailShareBtn').addEventListener('click', ()=> openShareModal(p));
     document.getElementById('reportAdBtn').addEventListener('click', ()=> openReportModal(p));
