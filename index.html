@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ur-Latn">
 <head>
-  <link rel="manifest" href="/manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DFS — Duty Free Shop</title>
@@ -1340,6 +1339,7 @@
       <label for="editCityBtn">Shehar (City)</label>
       <button type="button" id="editCityBtn" class="city-field-btn">Karachi</button>
       <input type="hidden" id="editCity" value="Karachi">
+      <input type="hidden" id="editArea" value="">
     </div>
 
     <div class="field">
@@ -1443,7 +1443,7 @@
   <div class="modal" style="max-width:360px; padding:0; display:flex; flex-direction:column; max-height:75vh;">
     <div style="padding:20px 20px 12px;">
       <button class="close-x" id="closeCityPickerBtn">✕</button>
-      <h3 style="margin-bottom:12px;">📍 Shehar Chunein</h3>
+      <h3 id="cityPickerTitle" style="margin-bottom:12px;">📍 Shehar Chunein</h3>
       <input type="text" id="citySearchInput" placeholder="Shehar dhoondein... jese 'Fais'" style="width:100%; padding:11px 14px; border-radius:9px; border:1px solid var(--line); background:var(--panel); color:var(--cream); font-family:'Poppins'; font-size:14px;">
     </div>
     <div id="cityPickerList" style="overflow-y:auto; padding:6px 12px 16px; flex:1;"></div>
@@ -1580,6 +1580,7 @@
       <label for="pCityBtn" data-i18n="city">Shehar (City)</label>
       <button type="button" id="pCityBtn" class="city-field-btn">Karachi</button>
       <input type="hidden" id="pCity" value="Karachi">
+      <input type="hidden" id="pArea" value="">
     </div>
 
     <div class="field">
@@ -1756,6 +1757,28 @@
     urBtn.classList.toggle('active', currentLang === 'ur');
     enBtn.classList.toggle('active', currentLang === 'en');
   }
+
+  const KARACHI_AREAS = [
+    "DHA (Phases 1–8)", "Clifton", "Saddar", "Civil Lines", "Garden", "Lyari", "Kharadar",
+    "Mithadar", "II Chundrigar Road", "MA Jinnah Road", "Burns Road", "Tariq Road", "PECHS",
+    "Bahadurabad", "Nursery", "Tipu Sultan Road", "Shahrah-e-Faisal", "Gulshan-e-Iqbal (Blocks 1–19)",
+    "Gulistan-e-Jauhar (Blocks 1–20)", "Scheme 33", "University Road", "Federal B Area",
+    "North Nazimabad", "Nazimabad", "Liaquatabad", "Gulberg", "New Karachi", "Surjani Town",
+    "Buffer Zone", "KDA Scheme 1", "KDA Scheme 24", "FB Industrial Area", "SITE", "Baldia Town",
+    "Orangi Town", "Manghopir", "Keamari", "Mauripur", "Korangi", "Korangi Industrial Area",
+    "Landhi", "Shah Faisal Colony", "Model Colony", "Malir", "Malir Halt", "Malir Cantt",
+    "Khokhrapar", "Saudabad", "Rafah-e-Aam", "Jinnah Avenue", "Bin Qasim", "Ibrahim Hyderi",
+    "Gadap Town", "Sohrab Goth", "Gulzar-e-Hijri", "Ahsanabad", "Metroville", "Shadman Town",
+    "Pak Colony", "Sher Shah", "Hawke's Bay", "Sandspit", "Boat Basin", "Zamzama Gizri", "Seaview",
+    "Askari", "Cantt", "Cattle Colony", "Nipa", "Hasan Square", "Mosmiyat", "Safari Park",
+    "Abul Hasan Isphahani Road", "Johar Mor", "Sakhi Hassan", "Five Star Chowrangi", "Water Pump",
+    "Paposh Nagar", "Hyderi", "Ancholi", "Karimabad", "Lasbela", "Teen Hatti", "PIB Colony",
+    "Jail Chowrangi", "Jamshed Quarters", "Chanesar", "Mehmoodabad", "Akhtar Colony",
+    "Defence View", "Qayyumabad", "Delhi Colony", "Bihar Colony", "Agra Taj Colony",
+    "Gulshan-e-Maymar", "Taiser Town", "Naval Colony", "Metroville III", "Gulshan-e-Hadeed",
+    "Steel Town", "Other Area"
+  ];
+  const CITY_AREAS = { "Karachi": KARACHI_AREAS }; // extensible — add more cities here later
 
   const PAKISTAN_CITIES = [
     // Major cities
@@ -1973,7 +1996,7 @@
   async function addProductToDb(p, isNew=true){
     if(sharedWorking && sb){
       const { error } = await sb.from('products').insert([{
-        name:p.name, cat:p.cat, subcat:p.subcat || null, condition:p.condition || null, city:p.city || null, price:p.price, desc:p.desc,
+        name:p.name, cat:p.cat, subcat:p.subcat || null, condition:p.condition || null, city:p.city || null, area:p.area || null, price:p.price, desc:p.desc,
         phone:p.phone, image:p.image, images:p.images || null, custom:p.custom !== undefined ? p.custom : true,
         seller_id: p.seller_id || null, seller_name: p.seller_name || null, seller_avatar: p.seller_avatar || null
       }]);
@@ -2895,7 +2918,8 @@
     document.getElementById('editCat').value = p.cat || 'Fashion';
     populateEditSubcat(document.getElementById('editCat').value, p.subcat);
     document.getElementById('editCity').value = p.city || 'Karachi';
-    document.getElementById('editCityBtn').textContent = p.city || 'Karachi';
+    document.getElementById('editArea').value = p.area || '';
+    document.getElementById('editCityBtn').textContent = p.area ? `${p.city} - ${p.area}` : (p.city || 'Karachi');
     document.getElementById('editPrice').value = p.price || '';
     document.getElementById('editDesc').value = p.desc || '';
     editModalOverlay.classList.add('show');
@@ -2915,6 +2939,7 @@
     const cat = document.getElementById('editCat').value;
     const subcat = document.getElementById('editSubcat').value;
     const city = document.getElementById('editCity').value;
+    const area = document.getElementById('editArea').value;
     const price = document.getElementById('editPrice').value.trim();
     const desc = document.getElementById('editDesc').value.trim();
 
@@ -2927,7 +2952,7 @@
     btn.disabled = true;
     btn.textContent = 'Save ho raha hai...';
 
-    const updates = { name, cat, subcat, city, price: Number(price), desc };
+    const updates = { name, cat, subcat, city, area: area || null, price: Number(price), desc };
 
     try{
       if(sharedWorking && sb){
@@ -3025,12 +3050,18 @@
   // ---------- Category / Sub-Category setup for Sell Form ----------
   // ---------- Searchable City Picker ----------
   let cityPickerTarget = null; // 'filter' | 'sell' | 'edit'
+  let areaPickerMode = false;
+  let areaPickerForCity = null;
   const cityPickerOverlay = document.getElementById('cityPickerOverlay');
   const citySearchInput = document.getElementById('citySearchInput');
 
   function openCityPicker(target){
     cityPickerTarget = target;
+    areaPickerMode = false;
+    areaPickerForCity = null;
+    document.getElementById('cityPickerTitle').textContent = '📍 Shehar Chunein';
     citySearchInput.value = '';
+    citySearchInput.placeholder = "Shehar dhoondein... jese 'Fais'";
     renderCityPickerList('');
     cityPickerOverlay.classList.add('show');
     setTimeout(()=> citySearchInput.focus(), 50);
@@ -3046,7 +3077,17 @@
     return '';
   }
 
+  function currentAreaFieldValue(){
+    if(cityPickerTarget === 'sell') return document.getElementById('pArea').value;
+    if(cityPickerTarget === 'edit') return document.getElementById('editArea').value;
+    return '';
+  }
+
   function renderCityPickerList(query){
+    if(areaPickerMode){
+      renderAreaPickerList(query);
+      return;
+    }
     const list = document.getElementById('cityPickerList');
     const q = query.trim().toLowerCase();
     const selected = currentCityFieldValue();
@@ -3062,7 +3103,7 @@
       return;
     }
     html += matches.map(c =>
-      `<div class="city-picker-item" data-city="${c}">${c} ${selected === c ? '<span class="check">✓</span>' : ''}</div>`
+      `<div class="city-picker-item" data-city="${c}">${c}${CITY_AREAS[c] && cityPickerTarget !== 'filter' ? ' ›' : ''} ${selected === c ? '<span class="check">✓</span>' : ''}</div>`
     ).join('');
 
     list.innerHTML = html;
@@ -3072,9 +3113,51 @@
     });
   }
 
+  function renderAreaPickerList(query){
+    const list = document.getElementById('cityPickerList');
+    const q = query.trim().toLowerCase();
+    const areas = CITY_AREAS[areaPickerForCity] || [];
+    const selectedArea = currentAreaFieldValue();
+    const matches = areas.filter(a => a.toLowerCase().includes(q));
+
+    let html = `<div class="city-picker-item pinned" id="backToCitiesBtn">‹ Wapis Cities Par Jayein</div>`;
+    if(matches.length === 0){
+      html += '<div class="city-picker-empty">Koi area nahi mila.</div>';
+    } else {
+      html += matches.map(a =>
+        `<div class="city-picker-item" data-area="${a}">${a} ${selectedArea === a ? '<span class="check">✓</span>' : ''}</div>`
+      ).join('');
+    }
+    list.innerHTML = html;
+
+    document.getElementById('backToCitiesBtn').addEventListener('click', ()=>{
+      areaPickerMode = false;
+      areaPickerForCity = null;
+      document.getElementById('cityPickerTitle').textContent = '📍 Shehar Chunein';
+      citySearchInput.value = '';
+      citySearchInput.placeholder = "Shehar dhoondein... jese 'Fais'";
+      renderCityPickerList('');
+    });
+    list.querySelectorAll('.city-picker-item[data-area]').forEach(item=>{
+      item.addEventListener('click', ()=> selectArea(item.dataset.area));
+    });
+  }
+
   citySearchInput.addEventListener('input', (e)=> renderCityPickerList(e.target.value));
 
   function selectCity(city){
+    // if this city has defined areas (and we're not just filtering the whole grid), drill into area selection
+    if(cityPickerTarget !== 'filter' && CITY_AREAS[city]){
+      areaPickerMode = true;
+      areaPickerForCity = city;
+      document.getElementById('cityPickerTitle').textContent = `📍 ${city} — Area Chunein`;
+      citySearchInput.value = '';
+      citySearchInput.placeholder = "Area dhoondein... jese 'Clifton'";
+      renderCityPickerList('');
+      setTimeout(()=> citySearchInput.focus(), 50);
+      return;
+    }
+
     if(cityPickerTarget === 'filter'){
       const hidden = document.getElementById('cityFilterSelect');
       hidden.value = city;
@@ -3082,11 +3165,29 @@
       hidden.dispatchEvent(new Event('change'));
     } else if(cityPickerTarget === 'sell'){
       document.getElementById('pCity').value = city;
+      document.getElementById('pArea').value = '';
       document.getElementById('pCityBtn').textContent = city;
     } else if(cityPickerTarget === 'edit'){
       document.getElementById('editCity').value = city;
+      document.getElementById('editArea').value = '';
       document.getElementById('editCityBtn').textContent = city;
     }
+    cityPickerOverlay.classList.remove('show');
+  }
+
+  function selectArea(area){
+    const label = areaPickerForCity + ' - ' + area;
+    if(cityPickerTarget === 'sell'){
+      document.getElementById('pCity').value = areaPickerForCity;
+      document.getElementById('pArea').value = area;
+      document.getElementById('pCityBtn').textContent = label;
+    } else if(cityPickerTarget === 'edit'){
+      document.getElementById('editCity').value = areaPickerForCity;
+      document.getElementById('editArea').value = area;
+      document.getElementById('editCityBtn').textContent = label;
+    }
+    areaPickerMode = false;
+    areaPickerForCity = null;
     cityPickerOverlay.classList.remove('show');
   }
 
@@ -3173,6 +3274,7 @@
     const subcat = document.getElementById('pSubcat').value;
     const condition = document.getElementById('pCondition').value;
     const city = document.getElementById('pCity').value;
+    const area = document.getElementById('pArea').value;
     const price = document.getElementById('pPrice').value.trim();
     const desc = document.getElementById('pDesc').value.trim();
     const phone = document.getElementById('pPhone').value.trim() || DEFAULT_PHONE;
@@ -3191,7 +3293,7 @@
     submitBtn.textContent = "Add ho raha hai...";
 
     const newProduct = {
-      name, cat, subcat, condition, city, price: Number(price), desc,
+      name, cat, subcat, condition, city, area: area || null, price: Number(price), desc,
       emoji: "🛍️",
       phone,
       image: selectedImages[0] || null,
@@ -3276,7 +3378,7 @@
     document.getElementById('detailSeller').innerHTML = p.seller_name ? `${detailAvatarHtml} ${p.seller_name}${ratingText} ${verifiedBadgeDetail}` : '';
     const locEl = document.getElementById('detailLocation');
     if(p.city){
-      locEl.textContent = `📍 ${p.city}, Pakistan`;
+      locEl.textContent = p.area ? `📍 ${p.area}, ${p.city}` : `📍 ${p.city}, Pakistan`;
       locEl.style.display = 'inline-block';
     } else {
       locEl.style.display = 'none';
