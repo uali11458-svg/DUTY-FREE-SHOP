@@ -1882,6 +1882,7 @@
   let searchTerm = "";
   let minPriceFilter = null;
   let cityFilter = 'All';
+  let areaFilter = 'All';
   let maxPriceFilter = null;
   let sortOrder = 'newest';
   let products = [];
@@ -2218,6 +2219,9 @@
 
     if(cityFilter !== 'All'){
       filtered = filtered.filter(p => p.city === cityFilter);
+    }
+    if(areaFilter !== 'All'){
+      filtered = filtered.filter(p => p.area === areaFilter);
     }
 
     if(searchTerm.trim().length > 0){
@@ -3080,6 +3084,7 @@
   function currentAreaFieldValue(){
     if(cityPickerTarget === 'sell') return document.getElementById('pArea').value;
     if(cityPickerTarget === 'edit') return document.getElementById('editArea').value;
+    if(cityPickerTarget === 'filter') return areaFilter;
     return '';
   }
 
@@ -3121,6 +3126,9 @@
     const matches = areas.filter(a => a.toLowerCase().includes(q));
 
     let html = `<div class="city-picker-item pinned" id="backToCitiesBtn">‹ Wapis Cities Par Jayein</div>`;
+    if(cityPickerTarget === 'filter' && (q === '' || 'sab areas all'.includes(q))){
+      html += `<div class="city-picker-item pinned" data-area="__ALL__">🏙️ Sab ${areaPickerForCity} Areas ${selectedArea === 'All' ? '<span class="check">✓</span>' : ''}</div>`;
+    }
     if(matches.length === 0){
       html += '<div class="city-picker-empty">Koi area nahi mila.</div>';
     } else {
@@ -3146,8 +3154,9 @@
   citySearchInput.addEventListener('input', (e)=> renderCityPickerList(e.target.value));
 
   function selectCity(city){
-    // if this city has defined areas (and we're not just filtering the whole grid), drill into area selection
-    if(cityPickerTarget !== 'filter' && CITY_AREAS[city]){
+    // if this city has defined areas, drill into area selection
+    // ('All Pakistan' in the filter context has no areas, so it skips this and finalizes directly)
+    if(CITY_AREAS[city]){
       areaPickerMode = true;
       areaPickerForCity = city;
       document.getElementById('cityPickerTitle').textContent = `📍 ${city} — Area Chunein`;
@@ -3161,6 +3170,8 @@
     if(cityPickerTarget === 'filter'){
       const hidden = document.getElementById('cityFilterSelect');
       hidden.value = city;
+      cityFilter = city;
+      areaFilter = 'All';
       document.getElementById('cityFilterBtn').textContent = city === 'All' ? '🌍 All Pakistan' : city;
       hidden.dispatchEvent(new Event('change'));
     } else if(cityPickerTarget === 'sell'){
@@ -3176,6 +3187,25 @@
   }
 
   function selectArea(area){
+    if(cityPickerTarget === 'filter'){
+      const hidden = document.getElementById('cityFilterSelect');
+      hidden.value = areaPickerForCity;
+      cityFilter = areaPickerForCity;
+      if(area === '__ALL__'){
+        areaFilter = 'All';
+        document.getElementById('cityFilterBtn').textContent = areaPickerForCity;
+      } else {
+        areaFilter = area;
+        document.getElementById('cityFilterBtn').textContent = `${areaPickerForCity} - ${area}`;
+      }
+      renderCategories();
+      renderProducts();
+      areaPickerMode = false;
+      areaPickerForCity = null;
+      cityPickerOverlay.classList.remove('show');
+      return;
+    }
+
     const label = areaPickerForCity + ' - ' + area;
     if(cityPickerTarget === 'sell'){
       document.getElementById('pCity').value = areaPickerForCity;
