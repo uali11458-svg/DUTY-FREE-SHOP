@@ -1778,7 +1778,83 @@
     "Gulshan-e-Maymar", "Taiser Town", "Naval Colony", "Metroville III", "Gulshan-e-Hadeed",
     "Steel Town", "Other Area"
   ];
-  const CITY_AREAS = { "Karachi": KARACHI_AREAS }; // extensible — add more cities here later
+  const LAHORE_AREAS = [
+    "Gulberg", "Johar Town", "DHA (Phases 1–11)", "Model Town", "Bahria Town", "Cantt",
+    "Garden Town", "Township", "Wapda Town", "Faisal Town", "Iqbal Town", "Allama Iqbal Town",
+    "Samanabad", "Shadman", "Muslim Town", "Garhi Shahu", "Anarkali", "Mozang", "Ichhra",
+    "Shalimar", "Baghbanpura", "Walled City (Androon Lahore)", "Mughalpura", "Harbanspura",
+    "Batapur", "Thokar Niaz Baig", "Raiwind Road", "Ferozepur Road", "Multan Road", "Canal Bank",
+    "Green Town", "Sabzazar", "Chungi Amar Sidhu", "Valencia Town", "Bahria Orchard",
+    "Sui Gas Society", "EME Society", "PIA Society", "Askari", "Cavalry Ground", "Upper Mall",
+    "Lower Mall", "Shah Jamal", "New Garden Town", "Nishtar Colony", "Kot Lakhpat",
+    "Youhanabad", "Ravi Road", "Chuburji", "Badami Bagh", "Misri Shah", "Shahdara",
+    "Airport Road", "Barki Road", "Wagah", "Other Area"
+  ];
+  const ISLAMABAD_AREAS = [
+    "Blue Area", "F-6", "F-7", "F-8", "F-9", "F-10", "F-11", "G-6", "G-7", "G-8", "G-9",
+    "G-10", "G-11", "G-13", "G-15", "E-7", "E-11", "H-8", "H-9", "H-10", "H-11", "H-13",
+    "I-8", "I-9", "I-10", "I-14", "D-12", "Bahria Town Islamabad", "DHA Islamabad", "Bani Gala",
+    "Saidpur Village", "Golra", "Tarnol", "Shah Allah Ditta", "Soan Garden", "PWD Housing Scheme",
+    "Chak Shahzad", "Barakahu", "Nilore", "Tarlai", "Rawal Town", "Margalla Town", "Korang Town",
+    "Alipur Farash", "Other Area"
+  ];
+  const RAWALPINDI_AREAS = [
+    "Saddar", "Cantt", "Committee Chowk", "Raja Bazaar", "Bank Road", "Murree Road",
+    "Chandni Chowk", "Satellite Town", "Westridge", "Chaklala", "Gulraiz", "Bahria Town (Phase 1–8)",
+    "DHA Rawalpindi", "Adiala Road", "Airport Housing Society", "Askari", "PWD", "Range Road",
+    "Dhamial", "Gulzar-e-Quaid", "Peshawar Road", "Chaklala Scheme 3", "Chontra", "Tench Bhata",
+    "Lalkurti", "Kohati Bazaar", "Pirwadhai", "Dhoke Kashmirian", "Muslim Town", "Gawalmandi",
+    "Other Area"
+  ];
+  const FAISALABAD_AREAS = [
+    "Madina Town", "D Ground", "Susan Road", "Peoples Colony", "Samanabad", "Gulberg",
+    "Jaranwala Road", "Sargodha Road", "Jail Road", "Kohinoor City", "Eden Valley", "Wapda City",
+    "Millat Town", "Batala Colony", "Ghulam Muhammadabad", "Railway Station Area", "Clock Tower",
+    "Jhang Road", "Canal Road", "Satiana Road", "Sitara Chemical Colony", "Other Area"
+  ];
+  const MULTAN_AREAS = [
+    "Cantt", "Gulgasht Colony", "Shah Rukn-e-Alam Colony", "Bosan Road", "Vehari Road",
+    "Model Town", "Officers Colony", "LMQ Road", "Chowk Kumharanwala", "Nawa Shehar",
+    "Shalimar Colony", "Basti Malook", "Mumtazabad", "Qasim Bela", "Ghanta Ghar Area",
+    "Hussain Agahi", "Delhi Gate", "Bohar Gate", "Other Area"
+  ];
+  const PESHAWAR_AREAS = [
+    "University Town", "Hayatabad", "Cantt", "Saddar", "Gulbahar", "Board Bazaar", "Ring Road",
+    "Warsak Road", "Charsadda Road", "Firdous Colony", "Regi Model Town", "Tehkal", "Pishtakhara",
+    "Faqirabad", "Dabgari Gardens", "Chamkani", "Pawaka", "Gulberg", "Danishabad", "Other Area"
+  ];
+  const QUETTA_AREAS = [
+    "Cantt", "Jinnah Town", "Satellite Town", "Sariab Road", "Airport Road", "Samungli Road",
+    "Brewery Road", "Zarghoon Road", "Chaman Housing Scheme", "Baleli", "Pashtunabad",
+    "Kirani Road", "Alamdar Road", "Hazar Ganji", "Other Area"
+  ];
+  const GUJRANWALA_AREAS = [
+    "Model Town", "Satellite Town", "Civil Lines", "People's Colony", "Wapda Town", "GT Road Area",
+    "Rahwali Cantt", "Sialkot Road", "Sheikhupura Road", "Gondlanwala Road", "Ghakhar Mandi Road",
+    "Other Area"
+  ];
+  const SIALKOT_AREAS = [
+    "Cantt", "Model Town", "Satellite Town", "Kashmir Road", "Paris Road", "Rangpura",
+    "Shahabpura", "Rasool Nagar", "Chowk Kutchehry", "Marala Road", "Daska Road", "Other Area"
+  ];
+  const HYDERABAD_AREAS = [
+    "Latifabad (Units 1–12)", "Qasimabad", "City Area", "Cantt", "Hussainabad", "Auto Bhan Road",
+    "Hyderabad Bypass", "Tando Jam Road", "Gulistan-e-Sajjad", "Wadhu Wah", "Phuleli", "Other Area"
+  ];
+
+  const CITY_AREAS = {
+    "Karachi": KARACHI_AREAS,
+    "Lahore": LAHORE_AREAS,
+    "Islamabad": ISLAMABAD_AREAS,
+    "Rawalpindi": RAWALPINDI_AREAS,
+    "Faisalabad": FAISALABAD_AREAS,
+    "Multan": MULTAN_AREAS,
+    "Peshawar": PESHAWAR_AREAS,
+    "Quetta": QUETTA_AREAS,
+    "Gujranwala": GUJRANWALA_AREAS,
+    "Sialkot": SIALKOT_AREAS,
+    "Hyderabad": HYDERABAD_AREAS
+  }; // extensible — add more cities here later
 
   const PAKISTAN_CITIES = [
     // Major cities
