@@ -1309,6 +1309,12 @@
           <button class="lang-toggle-btn" id="langEnglishBtn" data-lang="en">🇬🇧 English</button>
         </div>
       </div>
+
+      <div class="settings-block" style="margin-top:22px; border-top:1px solid var(--line); padding-top:18px;">
+        <h3 style="font-size:15px;">🔔 Message Notifications</h3>
+        <p class="sub" style="margin-bottom:14px;" id="notifStatusText">Naye messages ke liye notification chalu karein.</p>
+        <button class="btn-primary" id="enableNotifBtn" style="width:100%;">Notifications Chalu Karein</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2523,6 +2529,7 @@
     currentUser = null;
     cartSet = new Set();
     teardownPresence();
+    teardownPushNotifications();
     accountModalOverlay.classList.remove('show');
     renderAuthArea();
     renderProducts();
@@ -2607,7 +2614,7 @@
           alert('Account ban gaya! Agar email confirmation mangi jaye to email check karein, warna seedha login kar lein.');
           setAuthMode('login');
         } else if(data.session){
-          currentUser = buildCurrentUser(data.user); loadCart(); setupPresence();
+          currentUser = buildCurrentUser(data.user); loadCart(); setupPresence(); setupPushNotifications();
           renderAuthArea();
           renderProducts();
           closeAuth();
@@ -2615,7 +2622,7 @@
       } else {
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if(error) throw error;
-        currentUser = buildCurrentUser(data.user); loadCart(); setupPresence();
+        currentUser = buildCurrentUser(data.user); loadCart(); setupPresence(); setupPushNotifications();
         renderAuthArea();
         renderProducts();
         closeAuth();
@@ -2646,7 +2653,7 @@
     const { data } = await sb.auth.getSession();
     if(data.session){
       currentUser = buildCurrentUser(data.session.user);
-      loadCart(); setupPresence();
+      loadCart(); setupPresence(); setupPushNotifications();
     }
     renderAuthArea();
   }
@@ -2733,6 +2740,7 @@
     document.getElementById('settingsTabContent').style.display = which === 'settings' ? 'block' : 'none';
     if(which === 'cart') renderCartTab();
     if(which === 'myads') renderMyAdsTab();
+    if(which === 'settings') updateNotifSettingsUI();
   }
 
   document.getElementById('avatarInput').addEventListener('change', (e)=>{
@@ -3906,6 +3914,105 @@
   function teardownPresence(){
     if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel = null; }
     onlineUserIds = new Set();
+  }
+
+  // ---------- Web Push Notifications (Notification API + Supabase Realtime) ----------
+  // NOTE: This works whenever the site's tab is open in a browser (even backgrounded/minimized).
+  // True "push while the browser is fully closed" needs a Service Worker + VAPID push server,
+  // which is a separate backend piece beyond what a single index.html can do on its own.
+  let notificationsChannel = null;
+
+  function requestNotificationPermission(){
+    if(!('Notification' in window)) return;
+    if(Notification.permission === 'default'){
+      Notification.requestPermission().catch(()=>{});
+    }
+  }
+
+  function updateNotifSettingsUI(){
+    const statusEl = document.getElementById('notifStatusText');
+    const btn = document.getElementById('enableNotifBtn');
+    if(!statusEl || !btn) return;
+    if(!('Notification' in window)){
+      statusEl.textContent = 'Ye browser notifications support nahi karta.';
+      btn.style.display = 'none';
+      return;
+    }
+    if(Notification.permission === 'granted'){
+      statusEl.textContent = '✅ Notifications chalu hain — jab bhi naya message aayega, aapko pata chal jayega.';
+      btn.style.display = 'none';
+    } else if(Notification.permission === 'denied'){
+      statusEl.textContent = '⚠️ Notifications block hain. Apne browser ki site settings se manually enable karein.';
+      btn.style.display = 'none';
+    } else {
+      statusEl.textContent = 'Naye messages ke liye notification chalu karein.';
+      btn.style.display = 'block';
+    }
+  }
+  document.getElementById('enableNotifBtn').addEventListener('click', async ()=>{
+    if(!('Notification' in window)) return;
+    await Notification.requestPermission();
+    updateNotifSettingsUI();
+  });
+
+  function setupPushNotifications(){
+    if(!sb || !currentUser) return;
+    if(notificationsChannel){ sb.removeChannel(notificationsChannel); notificationsChannel = null; }
+
+    requestNotificationPermission();
+
+    notificationsChannel = sb.channel('dfs-notifications-' + currentUser.id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload)=>{
+        const row = payload.new;
+        if(!row || row.receiver_id !== currentUser.id) return; // only notify the actual recipient
+        if(row.sender_id === currentUser.id) return; // never notify on own messages
+
+        // Skip if this exact conversation is already open and the tab is focused (user is already looking at it)
+        const alreadyViewing = activeChat &&
+          String(activeChat.otherId) === String(row.sender_id) &&
+          String(activeChat.productId) === String(row.product_id) &&
+          document.visibilityState === 'visible' &&
+          chatModalOverlay.classList.contains('show');
+        if(alreadyViewing) return;
+
+        showMessageNotification(row);
+      })
+      .subscribe((status)=>{
+        console.log('Notifications channel status:', status);
+      });
+  }
+
+  function teardownPushNotifications(){
+    if(notificationsChannel){ sb.removeChannel(notificationsChannel); notificationsChannel = null; }
+  }
+
+  function showMessageNotification(row){
+    if(!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const senderName = row.sender_name || 'Someone';
+    const bodyText = (row.message || '').slice(0, 120);
+
+    let notif;
+    try{
+      notif = new Notification(`New Message from ${senderName}`, {
+        body: bodyText,
+        icon: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'32\' fill=\'%230B0F19\'/%3E%3Ctext x=\'32\' y=\'40\' font-family=\'Georgia, serif\' font-size=\'24\' font-weight=\'700\' fill=\'%23D4AF37\' text-anchor=\'middle\'%3EDFS%3C/text%3E%3C/svg%3E',
+        tag: 'dfs-msg-' + row.sender_id + '-' + row.product_id, // groups/replaces notifications from the same conversation
+        renotify: true
+      });
+    }catch(e){ console.warn('Could not show notification:', e); return; }
+
+    notif.onclick = ()=>{
+      window.focus();
+      const product = products.find(p => String(p.id) === String(row.product_id));
+      if(product){
+        openChat(row.sender_id, row.sender_name || 'Seller', product);
+      } else {
+        // product not loaded locally (e.g. notification fired on a stale page) — send them to it via URL
+        window.location.href = location.origin + location.pathname + '?product=' + row.product_id;
+      }
+      notif.close();
+    };
   }
 
   function updateChatStatusIndicator(){
