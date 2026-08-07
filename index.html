@@ -3872,13 +3872,22 @@
   }
 
 
-  // Auto-open a product if shared link is opened (?product=ID)
+  // Auto-open a product (?product=ID) — and if a notification click sent us here
+  // with &chatWith=SENDER_ID, open that chat directly instead of just the product.
   function checkSharedProductLink(){
     const params = new URLSearchParams(location.search);
     const pid = params.get('product');
-    if(pid){
-      const p = products.find(x=>String(x.id) === String(pid));
-      if(p) openDetailModal(p);
+    const chatWith = params.get('chatWith');
+    if(!pid) return;
+
+    const p = products.find(x=>String(x.id) === String(pid));
+    if(!p) return;
+
+    if(chatWith && currentUser){
+      const otherName = (p.seller_id === chatWith) ? (p.seller_name || 'Seller') : 'User';
+      openChat(chatWith, otherName, p);
+    } else {
+      openDetailModal(p);
     }
   }
 
@@ -3991,28 +4000,47 @@
 
     const senderName = row.sender_name || 'Someone';
     const bodyText = (row.message || '').slice(0, 120);
+    const iconUrl = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'32\' fill=\'%230B0F19\'/%3E%3Ctext x=\'32\' y=\'40\' font-family=\'Georgia, serif\' font-size=\'24\' font-weight=\'700\' fill=\'%23D4AF37\' text-anchor=\'middle\'%3EDFS%3C/text%3E%3C/svg%3E';
+    const clickUrl = location.origin + location.pathname + '?product=' + row.product_id + '&chatWith=' + row.sender_id;
 
-    let notif;
-    try{
-      notif = new Notification(`New Message from ${senderName}`, {
-        body: bodyText,
-        icon: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'32\' fill=\'%230B0F19\'/%3E%3Ctext x=\'32\' y=\'40\' font-family=\'Georgia, serif\' font-size=\'24\' font-weight=\'700\' fill=\'%23D4AF37\' text-anchor=\'middle\'%3EDFS%3C/text%3E%3C/svg%3E',
-        tag: 'dfs-msg-' + row.sender_id + '-' + row.product_id, // groups/replaces notifications from the same conversation
-        renotify: true
-      });
-    }catch(e){ console.warn('Could not show notification:', e); return; }
+    // Preferred path: Service Worker notification — this is what makes it work on mobile Chrome/Android.
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(reg=>{
+        reg.showNotification(`New Message from ${senderName}`, {
+          body: bodyText,
+          icon: iconUrl,
+          tag: 'dfs-msg-' + row.sender_id + '-' + row.product_id,
+          renotify: true,
+          data: { url: clickUrl }
+        });
+      }).catch(()=> showDesktopFallbackNotification());
+      return;
+    }
 
-    notif.onclick = ()=>{
-      window.focus();
-      const product = products.find(p => String(p.id) === String(row.product_id));
-      if(product){
-        openChat(row.sender_id, row.sender_name || 'Seller', product);
-      } else {
-        // product not loaded locally (e.g. notification fired on a stale page) — send them to it via URL
-        window.location.href = location.origin + location.pathname + '?product=' + row.product_id;
-      }
-      notif.close();
-    };
+    showDesktopFallbackNotification();
+
+    function showDesktopFallbackNotification(){
+      let notif;
+      try{
+        notif = new Notification(`New Message from ${senderName}`, {
+          body: bodyText,
+          icon: iconUrl,
+          tag: 'dfs-msg-' + row.sender_id + '-' + row.product_id,
+          renotify: true
+        });
+      }catch(e){ console.warn('Could not show notification:', e); return; }
+
+      notif.onclick = ()=>{
+        window.focus();
+        const product = products.find(p => String(p.id) === String(row.product_id));
+        if(product){
+          openChat(row.sender_id, row.sender_name || 'Seller', product);
+        } else {
+          window.location.href = clickUrl;
+        }
+        notif.close();
+      };
+    }
   }
 
   function updateChatStatusIndicator(){
@@ -4306,6 +4334,13 @@
     setMobileNavActive('mnavAccount');
     if(currentUser){ openAccountModal(); } else { openAuth(); }
   });
+
+  // Register Service Worker (required for notifications to work on mobile Chrome/Android)
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('service-worker.js')
+      .then(reg => console.log('Service worker registered:', reg.scope))
+      .catch(err => console.warn('Service worker registration failed:', err));
+  }
 
   window.addEventListener('load', initStorage);
   setTimeout(hideSplashScreen, 6000); // safety fallback
