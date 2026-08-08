@@ -318,6 +318,21 @@
     overflow-y:auto;
   }
 
+  .auth-divider{
+    display:flex; align-items:center; gap:12px; margin:18px 0 14px;
+    color:var(--muted); font-size:12px;
+  }
+  .auth-divider::before, .auth-divider::after{
+    content:""; flex:1; height:1px; background:var(--line);
+  }
+  .google-login-btn{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    background:#fff; color:#3c4043; border:1px solid var(--line);
+    padding:12px; border-radius:9px; font-weight:600; font-size:14px;
+    cursor:pointer; font-family:'Poppins';
+  }
+  .google-login-btn:hover{ box-shadow:0 2px 8px rgba(0,0,0,0.25); }
+
   .report-link{
     background:none; border:none; color:var(--pink); font-size:12.5px; font-weight:600;
     cursor:pointer; margin-top:14px; padding:0; text-decoration:underline;
@@ -1218,6 +1233,18 @@
     <div class="modal-actions">
       <button class="btn-primary" id="authSubmitBtn" style="flex:1">Login Karein</button>
     </div>
+
+    <div class="auth-divider"><span>ya</span></div>
+
+    <button class="google-login-btn" id="googleLoginBtn">
+      <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.03l2.99-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.97l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/>
+      </svg>
+      <span>Google Se Continue Karein</span>
+    </button>
 
     <p style="text-align:center; margin-top:16px; font-size:13px; color:var(--muted);">
       <span id="authToggleText">Account nahi hai?</span>
@@ -2656,6 +2683,40 @@
       loadCart(); setupPresence(); setupPushNotifications();
     }
     renderAuthArea();
+  }
+
+  document.getElementById('googleLoginBtn').addEventListener('click', async ()=>{
+    if(!sb){ alert('Kuch masla hua, dobara try karein.'); return; }
+    const btn = document.getElementById('googleLoginBtn');
+    btn.disabled = true;
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href.split('?')[0].split('#')[0] }
+    });
+    if(error){
+      alert('Google login shuru nahi ho saka.\nWajah: ' + error.message);
+      btn.disabled = false;
+    }
+    // on success the browser navigates away to Google, then back — no further code runs here
+  });
+
+  // Catches the session Supabase creates automatically after the Google redirect comes back,
+  // and also keeps currentUser in sync with any other auth changes (e.g. token refresh, sign-out
+  // from another tab) without needing a page reload.
+  if(window.__dfsSupabase){
+    window.__dfsSupabase.auth.onAuthStateChange((event, session)=>{
+      if(event === 'SIGNED_IN' && session && (!currentUser || currentUser.id !== session.user.id)){
+        currentUser = buildCurrentUser(session.user);
+        loadCart(); setupPresence(); setupPushNotifications();
+        renderAuthArea();
+        renderProducts();
+        closeAuth();
+        showToast('Login ho gaya, khush aamdeed!');
+      } else if(event === 'SIGNED_OUT'){
+        currentUser = null;
+        renderAuthArea();
+      }
+    });
   }
 
   // ---------- My Account ----------
