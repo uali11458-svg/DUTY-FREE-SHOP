@@ -2677,9 +2677,17 @@
 
   async function restoreSession(){
     if(!sb) return;
-    const { data } = await sb.auth.getSession();
-    if(data.session){
-      currentUser = buildCurrentUser(data.session.user);
+    const { data: sessionData } = await sb.auth.getSession();
+    if(sessionData.session){
+      // getSession() can return a stale cached user object (e.g. an old name after a profile
+      // update). getUser() makes a real round-trip to Supabase and returns the authoritative,
+      // truly-current user record — use that to build currentUser instead.
+      const { data: userData, error } = await sb.auth.getUser();
+      if(!error && userData.user){
+        currentUser = buildCurrentUser(userData.user);
+      } else {
+        currentUser = buildCurrentUser(sessionData.session.user); // fallback if the refresh call fails
+      }
       loadCart(); setupPresence(); setupPushNotifications();
     }
     renderAuthArea();
