@@ -2642,6 +2642,7 @@
           setAuthMode('login');
         } else if(data.session){
           currentUser = buildCurrentUser(data.user); loadCart(); setupPresence(); setupPushNotifications();
+          await hydrateCurrentUserFromProfile();
           renderAuthArea();
           renderProducts();
           closeAuth();
@@ -2650,6 +2651,7 @@
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if(error) throw error;
         currentUser = buildCurrentUser(data.user); loadCart(); setupPresence(); setupPushNotifications();
+        await hydrateCurrentUserFromProfile();
         renderAuthArea();
         renderProducts();
         closeAuth();
@@ -2665,14 +2667,39 @@
     document.getElementById('authName').value = '';
   });
 
+  // Our own `profiles` table is the SOURCE OF TRUTH for name/avatar — Google (and other OAuth
+  // providers) re-write user_metadata.full_name / avatar_url from the provider's own data on
+  // every sign-in, which would silently wipe out any custom name/photo the user set in-app if
+  // we relied on user_metadata directly. profiles.* is never touched by OAuth. hydrateCurrentUserFromProfile()
+  // (below) layers it on top after this runs.
   function buildCurrentUser(u){
     return {
       id: u.id,
       email: u.email,
       name: u.user_metadata?.full_name || u.email,
       avatar_url: u.user_metadata?.avatar_url || null,
-      last_name_change: u.user_metadata?.last_name_change || null
+      last_name_change: null
     };
+  }
+
+  // Google (and other OAuth providers) re-sync user_metadata.full_name / avatar_url from the
+  // provider's own data EVERY time the user signs in again — silently overwriting any custom
+  // name/photo the user set on our site. To make custom profile edits stick permanently, we
+  // store them in our own `profiles` table and apply them on top of the auth data here.
+  async function hydrateCurrentUserFromProfile(){
+    if(!currentUser || !sb) return;
+    try{
+      const { data, error } = await sb.from('profiles')
+        .select('full_name, avatar_url, last_name_change')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+      if(error) throw error;
+      if(data){
+        if(data.full_name) currentUser.name = data.full_name;
+        if(data.avatar_url) currentUser.avatar_url = data.avatar_url;
+        if(data.last_name_change) currentUser.last_name_change = data.last_name_change;
+      }
+    }catch(e){ console.warn('Profile override load failed (non-critical):', e); }
   }
 
   async function restoreSession(){
@@ -2689,6 +2716,7 @@
         currentUser = buildCurrentUser(sessionData.session.user); // fallback if the refresh call fails
       }
       loadCart(); setupPresence(); setupPushNotifications();
+      await hydrateCurrentUserFromProfile();
     }
     renderAuthArea();
   }
@@ -2712,10 +2740,11 @@
   // and also keeps currentUser in sync with any other auth changes (e.g. token refresh, sign-out
   // from another tab) without needing a page reload.
   if(window.__dfsSupabase){
-    window.__dfsSupabase.auth.onAuthStateChange((event, session)=>{
+    window.__dfsSupabase.auth.onAuthStateChange(async (event, session)=>{
       if(event === 'SIGNED_IN' && session && (!currentUser || currentUser.id !== session.user.id)){
         currentUser = buildCurrentUser(session.user);
         loadCart(); setupPresence(); setupPushNotifications();
+        await hydrateCurrentUserFromProfile();
         renderAuthArea();
         renderProducts();
         closeAuth();
@@ -2842,20 +2871,34 @@
 
     if(!newName){ alert('Naam khali nahi ho sakta.'); return; }
 
-    const updates = { full_name: newName };
-    if(pendingAvatarData) updates.avatar_url = pendingAvatarData;
-    if(nameChanged) updates.last_name_change = new Date().toISOString();
+    const newAvatar = pendingAvatarData || currentUser.avatar_url || null;
+    const newLastChange = nameChanged ? new Date().toISOString() : currentUser.last_name_change;
 
     const btn = document.getElementById('saveProfileBtn');
     btn.disabled = true; btn.textContent = 'Save ho raha hai...';
 
     try{
-      const { error } = await sb.auth.updateUser({ data: updates });
-      if(error) throw error;
+      // Source of truth: our own `profiles` table. This is what actually makes the change
+      // stick — Google (and other OAuth providers) re-sync auth.user_metadata with their own
+      // name/photo on every sign-in, so relying on updateUser() alone gets silently overwritten
+      // the next time the user logs in with Google.
+      const { error: profileError } = await sb.from('profiles').upsert([{
+        id: currentUser.id,
+        full_name: newName,
+        avatar_url: newAvatar,
+        last_name_change: newLastChange
+      }], { onConflict: 'id' });
+      if(profileError) throw profileError;
+
+      // Best-effort: also mirror into auth user_metadata (harmless, helps non-OAuth users,
+      // and keeps things consistent if hydrateCurrentUserFromProfile() is ever unavailable).
+      try{
+        await sb.auth.updateUser({ data: { full_name: newName, avatar_url: newAvatar, last_name_change: newLastChange } });
+      }catch(e){ console.warn('Auth metadata mirror update failed (non-critical):', e); }
 
       currentUser.name = newName;
-      if(pendingAvatarData) currentUser.avatar_url = pendingAvatarData;
-      if(nameChanged) currentUser.last_name_change = updates.last_name_change;
+      currentUser.avatar_url = newAvatar;
+      currentUser.last_name_change = newLastChange;
 
       if(nameChanged && sharedWorking && sb){
         await sb.from('products').update({ seller_name: newName }).eq('seller_id', currentUser.id);
