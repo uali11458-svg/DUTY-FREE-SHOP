@@ -2,6 +2,7 @@
   "name": "Duty Free Shop",
   "short_name": "DFS",
   "description": "DFS Duty Free Shop is an open marketplace — anyone can list a product, anyone can buy. Talk directly over Call or WhatsApp, no hassle.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
