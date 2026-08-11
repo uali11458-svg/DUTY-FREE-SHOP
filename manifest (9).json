@@ -1,12 +1,13 @@
 {
-  "background_color": "#000000",
-  "dir": "ltr",
-  "display": "standalone",
   "name": "Duty Free Shop",
-  "orientation": "any",
-  "scope": "/",
   "short_name": "DFS",
+  "description": "DFS Duty Free Shop is an open marketplace — anyone can list a product, anyone can buy. Talk directly over Call or WhatsApp, no hassle.",
   "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "dir": "ltr",
+  "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
     {
