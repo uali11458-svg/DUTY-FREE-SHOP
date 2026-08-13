@@ -1,10 +1,7 @@
-// DFS - Duty Free Shop — minimal Service Worker
-// Purpose: enables notifications to work properly on mobile Chrome / Android
-// (mobile browsers require notifications to be shown via a Service Worker,
-// the plain `new Notification()` API used on desktop does not reliably work on mobile).
+// DFS - Duty Free Shop Service Worker
 
 self.addEventListener('install', function(event) {
-  self.skipWaiting();
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', function(event) {
@@ -43,15 +40,12 @@ self.addEventListener('push', function(event) {
     renotify: true,
 
     data: data.data || {
-      url: '/'
+      url: 'https://duty-free-shop.vercel.app/'
     }
   };
 
   event.waitUntil(
-    self.registration.showNotification(
-      title,
-      options
-    )
+    self.registration.showNotification(title, options)
   );
 
 });
@@ -61,14 +55,16 @@ self.addEventListener('push', function(event) {
 // NOTIFICATION CLICK
 // =====================================================
 
-// Handles the user tapping/clicking a notification
 self.addEventListener('notificationclick', function(event) {
 
   event.notification.close();
 
   const targetUrl =
-    (event.notification.data &&
-     event.notification.data.url) || '/';
+    event.notification &&
+    event.notification.data &&
+    event.notification.data.url
+      ? event.notification.data.url
+      : 'https://duty-free-shop.vercel.app/';
 
   event.waitUntil(
 
@@ -77,25 +73,21 @@ self.addEventListener('notificationclick', function(event) {
       includeUncontrolled: true
     }).then(function(clientList) {
 
-      // If a tab is already open, focus it and navigate
-      // to the right chat/product
+      // If website is already open
       for (const client of clientList) {
 
-        if ('focus' in client) {
+        if ('navigate' in client) {
 
-          return client.focus().then(function() {
-
-            if ('navigate' in client) {
-              return client.navigate(targetUrl);
-            }
-
-          });
+          return client.navigate(targetUrl)
+            .then(function() {
+              return client.focus();
+            });
 
         }
 
       }
 
-      // Otherwise open a new tab/window
+      // If website is not open
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl);
       }
