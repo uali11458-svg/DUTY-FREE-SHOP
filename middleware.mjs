@@ -1,0 +1,173 @@
+// ============================================================
+// DFS - Duty Free Shop — Vercel Routing Middleware
+// ------------------------------------------------------------
+// This file must sit at the ROOT of your project (same level as
+// index.html), named exactly:  middleware.mjs
+//
+// What it does:
+// 1. When someone opens "/?product=123", it fetches that product
+//    from Supabase and rewrites the page's <title>, meta description,
+//    Open Graph / Twitter tags, and adds Product schema.org JSON-LD —
+//    so Google and WhatsApp/Facebook link previews show the actual
+//    product name, price, and photo instead of the generic homepage
+//    title for every single product.
+// 2. When someone (or Google) requests "/sitemap.xml", it generates
+//    a fresh sitemap listing every live product, straight from
+//    Supabase — no need to hand-maintain a static file.
+//
+// For every other URL, it does nothing and your site loads exactly
+// as it did before — zero risk to existing functionality.
+//
+// Deploy: just add this file to your GitHub repo / Vercel project
+// root and push. No extra configuration needed. If your project
+// has no package.json (pure static site), the ".mjs" extension
+// makes this work without needing to add "type": "module" anywhere.
+// ============================================================
+
+export const config = {
+  matcher: ['/', '/sitemap.xml'],
+};
+
+const SUPABASE_URL = 'https://apfazzoguhjstuysurco.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_T1tzYCeVSyY_E3iDGSkeBg_Ql6JlSPz';
+const SITE_URL = 'https://duty-free-shop.vercel.app';
+
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function escapeXml(str) {
+  return String(str || '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
+  }[c]));
+}
+
+async function supabaseGet(path) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+  });
+  if (!res.ok) throw new Error(`Supabase request failed: ${res.status}`);
+  return res.json();
+}
+
+async function handleSitemap() {
+  let products = [];
+  try {
+    products = await supabaseGet('products?select=id,name&custom=eq.true&order=id.desc&limit=5000');
+  } catch (e) {
+    console.error('Sitemap: failed to load products:', e);
+  }
+
+  const staticUrls = [
+    { loc: `${SITE_URL}/`, priority: '1.0' },
+  ];
+
+  const productUrls = (products || []).map((p) => ({
+    loc: `${SITE_URL}/?product=${p.id}`,
+    priority: '0.8',
+  }));
+
+  const urls = [...staticUrls, ...productUrls];
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map((u) => `  <url>\n    <loc>${escapeXml(u.loc)}</loc>\n    <priority>${u.priority}</priority>\n  </url>`).join('\n')}
+</urlset>`;
+
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      'content-type': 'application/xml; charset=utf-8',
+      'cache-control': 'public, max-age=3600', // re-generate at most once an hour
+    },
+  });
+}
+
+async function handleProductMeta(request, productId) {
+  let product = null;
+  try {
+    const rows = await supabaseGet(
+      `products?id=eq.${encodeURIComponent(productId)}&select=id,name,desc,price,image,cat`
+    );
+    product = Array.isArray(rows) ? rows[0] : null;
+  } catch (e) {
+    console.error('Product meta: Supabase lookup failed:', e);
+  }
+
+  // Unknown / removed product, or Supabase hiccup -> just let the normal SPA load.
+  if (!product) return undefined;
+
+  const origin = await fetch(new URL('/', request.url));
+  let html = await origin.text();
+
+  const priceText = Number(product.price || 0).toLocaleString();
+  const title = `${escapeHtml(product.name)} — Rs ${priceText} | DFS Duty Free Shop`;
+  const description = escapeHtml((product.desc || '').slice(0, 155)) || 'DFS - Duty Free Shop par ye product dekhein.';
+  const image = product.image || `${SITE_URL}/icon-512.png`;
+  const pageUrl = `${SITE_URL}/?product=${product.id}`;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.desc || undefined,
+    image,
+    category: product.cat || undefined,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'PKR',
+      price: product.price,
+      availability: 'https://schema.org/InStock',
+      url: pageUrl,
+    },
+  };
+
+  const injected = `
+<title>${title}</title>
+<meta name="description" content="${description}">
+<link rel="canonical" href="${pageUrl}">
+<meta property="og:type" content="product">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${description}">
+<meta property="og:image" content="${image}">
+<meta property="og:url" content="${pageUrl}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${description}">
+<meta name="twitter:image" content="${image}">
+<script type="application/ld+json">${JSON.stringify(schema)}</script>
+`;
+
+  // Drop the default <title> so we don't end up with two, then inject ours + tags before </head>.
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, '');
+  html = html.replace('</head>', `${injected}</head>`);
+
+  return new Response(html, {
+    status: 200,
+    headers: { 'content-type': 'text/html; charset=utf-8' },
+  });
+}
+
+export default async function middleware(request) {
+  const url = new URL(request.url);
+
+  if (url.pathname === '/sitemap.xml') {
+    return handleSitemap();
+  }
+
+  const productId = url.searchParams.get('product');
+  if (!productId) return undefined; // plain homepage visit -> serve index.html as-is
+
+  try {
+    const response = await handleProductMeta(request, productId);
+    return response; // undefined here also falls through to the normal static file
+  } catch (e) {
+    console.error('Product meta middleware failed, falling back to normal page:', e);
+    return undefined;
+  }
+}
