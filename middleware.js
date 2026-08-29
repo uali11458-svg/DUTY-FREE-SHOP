@@ -34,7 +34,7 @@ export const config = {
 
 const SUPABASE_URL = 'https://apfazzoguhjstuysurco.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_T1tzYCeVSyY_E3iDGSkeBg_Ql6JlSPz';
-const SITE_URL = 'https://duty-free-shop.vercel.app';
+const SITE_URL = 'https://dfspk.com';
 
 function escapeHtml(str) {
   return String(str || '').replace(/[&<>"']/g, (c) => ({
