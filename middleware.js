@@ -16,9 +16,14 @@
 //    so Google and WhatsApp/Facebook link previews show the actual
 //    product name, price, and photo instead of the generic homepage
 //    title for every single product.
-// 2. When someone (or Google) requests "/sitemap.xml", it generates
-//    a fresh sitemap listing every live product, straight from
-//    Supabase — no need to hand-maintain a static file.
+// 2. When someone opens "/?cat=Electronics" (or any other category),
+//    it does the same thing for that category — a real, indexable
+//    landing page like "Electronics for Sale in Pakistan | DFS" instead
+//    of everything sharing the one generic homepage title.
+// 3. When someone (or Google) requests "/sitemap.xml", it generates
+//    a fresh sitemap listing the homepage, every category, and every
+//    live product, straight from Supabase — no need to hand-maintain
+//    a static file.
 //
 // For every other URL, it does nothing and your site loads exactly
 // as it did before — zero risk to existing functionality.
@@ -71,12 +76,17 @@ async function handleSitemap() {
     { loc: `${SITE_URL}/`, priority: '1.0' },
   ];
 
+  const categoryUrls = CATEGORIES.map((c) => ({
+    loc: `${SITE_URL}/?cat=${encodeURIComponent(c)}`,
+    priority: '0.7',
+  }));
+
   const productUrls = (products || []).map((p) => ({
     loc: `${SITE_URL}/?product=${p.id}`,
     priority: '0.8',
   }));
 
-  const urls = [...staticUrls, ...productUrls];
+  const urls = [...staticUrls, ...categoryUrls, ...productUrls];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -92,7 +102,75 @@ ${urls.map((u) => `  <url>\n    <loc>${escapeXml(u.loc)}</loc>\n    <priority>${
   });
 }
 
-async function handleProductMeta(request, productId) {
+// Top-level categories — must match the `categoryStructure` keys in index.html exactly,
+// since these are what ?cat= will contain.
+const CATEGORIES = [
+  'Electronics', 'Fashion', 'Home', 'Vehicles', 'Beauty', 'Sports & Books',
+  'Property', 'Jobs', 'Services', 'Pets', 'Kids & Baby',
+  'Business & Industrial', 'Grocery', 'Handmade', 'Other',
+];
+
+async function handleCategoryMeta(request, catName) {
+  let count = null;
+  try {
+    const countRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/products?cat=eq.${encodeURIComponent(catName)}&custom=eq.true&select=id`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          Prefer: 'count=exact',
+        },
+      }
+    );
+    const contentRange = countRes.headers.get('content-range'); // e.g. "0-19/143"
+    if (contentRange && contentRange.includes('/')) {
+      count = contentRange.split('/')[1];
+    }
+  } catch (e) {
+    console.error('Category meta: count lookup failed:', e);
+  }
+
+  const origin = await fetch(new URL('/', request.url));
+  let html = await origin.text();
+
+  const countText = count ? `${count}+ ads` : 'Ads';
+  const title = `${escapeHtml(catName)} for Sale in Pakistan (${countText}) | DFS Duty Free Shop`;
+  const description = `Browse ${escapeHtml(catName)} ads across Pakistan on DFS - Duty Free Shop. Buy or sell directly — contact sellers instantly via Call or WhatsApp, no middleman.`;
+  const pageUrl = `${SITE_URL}/?cat=${encodeURIComponent(catName)}`;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: title,
+    description,
+    url: pageUrl,
+  };
+
+  const injected = `
+<title>${title}</title>
+<meta name="description" content="${escapeHtml(description)}">
+<link rel="canonical" href="${pageUrl}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${escapeHtml(description)}">
+<meta property="og:url" content="${pageUrl}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${escapeHtml(description)}">
+<script type="application/ld+json">${JSON.stringify(schema)}</script>
+`;
+
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, '');
+  html = html.replace('</head>', `${injected}</head>`);
+
+  return new Response(html, {
+    status: 200,
+    headers: { 'content-type': 'text/html; charset=utf-8' },
+  });
+}
+
+
   let product = null;
   try {
     const rows = await supabaseGet(
@@ -165,13 +243,25 @@ export default async function middleware(request) {
   }
 
   const productId = url.searchParams.get('product');
-  if (!productId) return undefined; // plain homepage visit -> serve index.html as-is
-
-  try {
-    const response = await handleProductMeta(request, productId);
-    return response; // undefined here also falls through to the normal static file
-  } catch (e) {
-    console.error('Product meta middleware failed, falling back to normal page:', e);
-    return undefined;
+  if (productId) {
+    try {
+      const response = await handleProductMeta(request, productId);
+      return response; // undefined here also falls through to the normal static file
+    } catch (e) {
+      console.error('Product meta middleware failed, falling back to normal page:', e);
+      return undefined;
+    }
   }
+
+  const catParam = url.searchParams.get('cat');
+  if (catParam && CATEGORIES.includes(catParam)) {
+    try {
+      return await handleCategoryMeta(request, catParam);
+    } catch (e) {
+      console.error('Category meta middleware failed, falling back to normal page:', e);
+      return undefined;
+    }
+  }
+
+  return undefined; // plain homepage visit -> serve index.html as-is
 }
