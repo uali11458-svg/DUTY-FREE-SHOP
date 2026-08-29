@@ -31,7 +31,7 @@ self.addEventListener('push', function(event) {
     tag: data.tag || 'dfs-message',
     renotify: true,
     data: data.data || {
-      url: 'https://duty-free-shop.vercel.app/'
+      url: 'https://dfspk.com/'
     }
   };
   event.waitUntil(
@@ -48,7 +48,7 @@ self.addEventListener('notificationclick', function(event) {
     event.notification.data &&
     event.notification.data.url
       ? event.notification.data.url
-      : 'https://duty-free-shop.vercel.app/';
+      : 'https://dfspk.com/';
   event.waitUntil(
     self.clients.matchAll({
       type: 'window',
