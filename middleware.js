@@ -338,6 +338,24 @@ async function handleProductMeta(request, productId) {
       price: product.price,
       availability: 'https://schema.org/InStock',
       url: pageUrl,
+      // This is a peer-to-peer marketplace (buyer contacts seller directly via
+      // Call/WhatsApp) — there is no site-run shipping or returns system, so
+      // these describe that honestly rather than inventing a policy DFS
+      // doesn't actually offer.
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: '0', currency: 'PKR' },
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'PK' },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 3, unitCode: 'DAY' },
+        },
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+      },
     },
   };
 
