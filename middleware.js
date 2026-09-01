@@ -316,6 +316,18 @@ async function handleProductMeta(request, productId) {
   // Unknown / removed product, or Supabase hiccup -> just let the normal SPA load.
   if (!product) return undefined;
 
+  // Only ever include real reviews here — Google can penalize sites that
+  // fabricate ratings, so aggregateRating/review are simply omitted below
+  // when a product genuinely has none yet.
+  let reviews = [];
+  try {
+    reviews = await supabaseGet(
+      `seller_ratings?product_id=eq.${encodeURIComponent(productId)}&comment=not.is.null&select=rating_value,comment,buyer_name&order=created_at.desc&limit=20`
+    );
+  } catch (e) {
+    console.error('Product meta: reviews lookup failed:', e);
+  }
+
   const origin = await fetch(new URL('/', request.url));
   let html = await origin.text();
 
@@ -325,6 +337,23 @@ async function handleProductMeta(request, productId) {
   const image = product.image || `${SITE_URL}/icon-512.png`;
   const pageUrl = `${SITE_URL}/?product=${product.id}`;
 
+  let aggregateRating;
+  let reviewSchema;
+  if (reviews && reviews.length > 0) {
+    const avg = reviews.reduce((s, r) => s + r.rating_value, 0) / reviews.length;
+    aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: avg.toFixed(1),
+      reviewCount: reviews.length,
+    };
+    reviewSchema = reviews.slice(0, 5).map((r) => ({
+      '@type': 'Review',
+      reviewRating: { '@type': 'Rating', ratingValue: r.rating_value },
+      author: { '@type': 'Person', name: r.buyer_name || 'Buyer' },
+      reviewBody: r.comment,
+    }));
+  }
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -332,6 +361,8 @@ async function handleProductMeta(request, productId) {
     description: product.desc || undefined,
     image,
     category: product.cat || undefined,
+    aggregateRating,
+    review: reviewSchema,
     offers: {
       '@type': 'Offer',
       priceCurrency: 'PKR',
