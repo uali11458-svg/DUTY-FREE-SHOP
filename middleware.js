@@ -123,6 +123,19 @@ const CATEGORIES = [
   'Business & Industrial', 'Grocery', 'Handmade', 'Other',
 ];
 
+function breadcrumbSchema(items) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
 async function handleCategoryMeta(request, catName) {
   let count = null;
   try {
@@ -160,6 +173,11 @@ async function handleCategoryMeta(request, catName) {
     url: pageUrl,
   };
 
+  const breadcrumb = breadcrumbSchema([
+    { name: 'Home', url: `${SITE_URL}/` },
+    { name: catName, url: pageUrl },
+  ]);
+
   const injected = `
 <title>${title}</title>
 <meta name="description" content="${escapeHtml(description)}">
@@ -172,6 +190,7 @@ async function handleCategoryMeta(request, catName) {
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
 <script type="application/ld+json">${JSON.stringify(schema)}</script>
+<script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>
 `;
 
   html = html.replace(/<title>[\s\S]*?<\/title>/i, '');
@@ -282,6 +301,12 @@ async function handleBlogPost(slug) {
     mainEntityOfPage: pageUrl,
   };
 
+  const breadcrumb = breadcrumbSchema([
+    { name: 'Home', url: `${SITE_URL}/` },
+    { name: 'Blog', url: `${SITE_URL}/blog` },
+    { name: post.title, url: pageUrl },
+  ]);
+
   const html = renderSitePage({
     title: `${post.title} | DFS Blog`,
     description,
@@ -292,7 +317,8 @@ async function handleBlogPost(slug) {
 <meta property="og:description" content="${description}">
 ${post.cover_image ? `<meta property="og:image" content="${escapeHtml(post.cover_image)}">` : ''}
 <meta property="og:url" content="${pageUrl}">
-<script type="application/ld+json">${JSON.stringify(schema)}</script>`,
+<script type="application/ld+json">${JSON.stringify(schema)}</script>
+<script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>`,
     bodyHtml: `<h1>${escapeHtml(post.title)}</h1><div class="meta">${dateText}</div>${coverHtml}${contentHtml}`,
   });
 
@@ -390,6 +416,13 @@ async function handleProductMeta(request, productId) {
     },
   };
 
+  const breadcrumbItems = [{ name: 'Home', url: `${SITE_URL}/` }];
+  if (product.cat) {
+    breadcrumbItems.push({ name: product.cat, url: `${SITE_URL}/?cat=${encodeURIComponent(product.cat)}` });
+  }
+  breadcrumbItems.push({ name: product.name, url: pageUrl });
+  const breadcrumb = breadcrumbSchema(breadcrumbItems);
+
   const injected = `
 <title>${title}</title>
 <meta name="description" content="${description}">
@@ -404,6 +437,7 @@ async function handleProductMeta(request, productId) {
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${image}">
 <script type="application/ld+json">${JSON.stringify(schema)}</script>
+<script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>
 `;
 
   // Drop the default <title> so we don't end up with two, then inject ours + tags before </head>.
