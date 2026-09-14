@@ -332,7 +332,7 @@ async function handleProductMeta(request, productId) {
   let product = null;
   try {
     const rows = await supabaseGet(
-      `products?id=eq.${encodeURIComponent(productId)}&select=id,name,desc,price,image,cat`
+      `products?id=eq.${encodeURIComponent(productId)}&select=id,name,desc,price,image,cat,attributes`
     );
     product = Array.isArray(rows) ? rows[0] : null;
   } catch (e) {
@@ -380,6 +380,18 @@ async function handleProductMeta(request, productId) {
     }));
   }
 
+  let additionalProperty;
+  if (product.attributes && typeof product.attributes === 'object') {
+    const entries = Object.entries(product.attributes).filter(([, v]) => v);
+    if (entries.length > 0) {
+      additionalProperty = entries.map(([key, value]) => ({
+        '@type': 'PropertyValue',
+        name: key.replace(/_/g, ' '),
+        value: String(value),
+      }));
+    }
+  }
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -387,6 +399,7 @@ async function handleProductMeta(request, productId) {
     description: product.desc || undefined,
     image,
     category: product.cat || undefined,
+    additionalProperty,
     aggregateRating,
     review: reviewSchema,
     offers: {
